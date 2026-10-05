@@ -13,7 +13,7 @@
 - Xuất và nhập bản sao lưu `.json`.
 - Giao diện hiện đại: nền xám nhạt, thẻ trắng bo tròn lớn, nút viên thuốc màu than, thẻ minh hoạ núi Phú Sĩ đổi màu trời theo số giờ trong tuần (xanh → vàng → đỏ), thanh tab nổi, vuốt trái để xoá ca (có hoàn tác), hỗ trợ chế độ tối.
 
-## Cách 1: Dùng ngay qua link Claude (khuyên dùng)
+## Cách 1: Dùng qua link Claude
 
 Link: https://claude.ai/artifact/VV4Gcs3EAtDCPjgZVZNKJf
 
@@ -23,22 +23,22 @@ Link: https://claude.ai/artifact/VV4Gcs3EAtDCPjgZVZNKJf
 
 Link đang ở chế độ riêng tư, chỉ bạn mở được.
 
-## Cách 2: Cài thành app độc lập, chạy cả khi không có mạng
+## Cách 2: App riêng trên iPhone (GitHub Pages)
 
-Thư mục `docs/` là bản web app hoàn chỉnh (PWA). Đưa nó lên một trang HTTPS miễn phí, ví dụ GitHub Pages:
+App đã được đưa lên: **https://longnv-2502-work.github.io/arubaito/** (repo [longnv-2502-work/arubaito](https://github.com/longnv-2502-work/arubaito), thư mục `docs/`).
 
-1. Tạo repository mới trên GitHub, ví dụ `arubaito`.
-2. Trong thư mục này, chạy:
-   ```bash
-   git init && git add . && git commit -m "Sổ giờ Arubaito"
-   ```
-   ```bash
-   git branch -M main && git remote add origin https://github.com/<tên-github>/arubaito.git && git push -u origin main
-   ```
-3. Trên GitHub: **Settings → Pages → Build and deployment → Deploy from a branch**, chọn nhánh `main`, thư mục `/docs`, bấm Save.
-4. Sau 1–2 phút, mở `https://<tên-github>.github.io/arubaito/` bằng **Safari** trên iPhone → **Chia sẻ** → **Thêm vào MH chính**.
+Cài lên iPhone:
+1. Mở địa chỉ trên bằng **Safari**.
+2. Bấm **Chia sẻ** → **Thêm vào MH chính** → **Thêm**.
+3. Luôn mở bằng biểu tượng trên màn hình chính: app mở toàn màn hình và chạy cả khi không có mạng.
 
-App sẽ có biểu tượng riêng, mở toàn màn hình như app thật và chạy được khi offline. Ở cách này dữ liệu nằm trên iPhone, không đồng bộ sang máy khác, nên thỉnh thoảng hãy vào **Cài đặt → Xuất bản sao lưu**.
+Dữ liệu nằm trên iPhone, không đồng bộ với bản link Claude. Thỉnh thoảng vào **Cài đặt → Xuất bản sao lưu** để giữ một bản dự phòng.
+
+Cập nhật app sau khi sửa (chạy trong thư mục dự án):
+```bash
+npm run build && git add . && git commit -m "Cập nhật" && git push
+```
+Đợi 1–2 phút, mở lại app trên iPhone là có bản mới.
 
 ## Chạy thử trên máy tính
 
