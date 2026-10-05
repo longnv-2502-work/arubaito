@@ -335,6 +335,8 @@ svg{flex:none}
 .cta.white{background:var(--card);color:var(--ink)}
 .cta.red{background:var(--red);color:#FFFFFF}
 .cta.block{width:100%;min-height:58px;font-size:16.5px}
+.btn-row{display:flex;gap:8px}
+.btn-row .cta{flex:1 1 0;min-width:0;padding:0 12px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{display:inline-flex;align-items:center;gap:7px;max-width:100%;height:42px;padding:0 16px;border-radius:999px;background:var(--fill);font-size:15px;font-weight:500;color:var(--ink)}
 .chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -826,7 +828,7 @@ function viewWeek() {
         <li>Lưu quán ở tab Quán: tên, 時給 và các ca hay làm.</li>
         <li>Thêm ca: chọn quán, chạm vào ca, chọn ngày là xong.</li>
         <li>App cộng giờ, tính lương và báo đỏ khi tuần vượt ${fmtH(st.weekLimit * 60)}.</li></ol>
-      <div class="chips"><button class="cta dark" data-act="shop-new">${I.plus}Thêm quán đầu tiên</button><button class="cta light" data-act="sample-load">Xem dữ liệu mẫu</button></div></section>`;
+      <div class="btn-row"><button class="cta dark" data-act="shop-new">${I.plus}Thêm quán</button><button class="cta light" data-act="sample-load">Xem dữ liệu mẫu</button></div></section>`;
   }
   if (diff === 0) html += nextCard();
 
@@ -961,7 +963,7 @@ function viewSettings() {
     <label class="li" for="set-week">${ico(I.clock)}<span class="li-main"><b>Tối đa mỗi tuần</b><small>Visa du học: 28 giờ</small></span>
       <span class="li-end"><input id="set-week" class="in-pill" type="number" inputmode="decimal" min="1" max="80" step="0.5" value="${st.weekLimit}">giờ</span></label>
     <div class="li">${ico(I.cal)}<span class="li-main"><b>Ngày đầu tuần</b></span>
-      <span class="li-end" style="width:146px">${seg('set-ws', [['1', 'Thứ Hai'], ['0', 'CN']], String(st.weekStart))}</span></div>
+      <span class="li-end">${seg('set-ws', [['1', 'Thứ Hai'], ['0', 'CN']], String(st.weekStart))}</span></div>
   </section>
   <p class="list-f">Giờ còn lại tính trong từng tuần, từ ngày đầu tuần ở trên đến hết 7 ngày. Giờ tối đa của tháng: ${fmtH(st.weekLimit * 60)} × số ngày ÷ 7.</p>
 
