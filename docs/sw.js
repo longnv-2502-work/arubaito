@@ -1,5 +1,5 @@
 // Offline cache for Sổ giờ Arubaito. VERSION is stamped by scripts/build.mjs on every build.
-const VERSION = '20261005182648';
+const VERSION = '20261005182849';
 const CACHE = 'arubaito-' + VERSION;
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
