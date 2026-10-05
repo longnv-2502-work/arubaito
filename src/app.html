@@ -15,6 +15,7 @@
   --scrim:rgb(0 0 0 / .32); --shadow:0 1px 2px rgb(0 0 0 / .03),0 10px 28px rgb(0 0 0 / .05);
   --f:"Onest", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
   --r-xl:30px; --r-l:24px; --r-m:18px;
+  --tab-gap:max(12px, calc(env(safe-area-inset-bottom, 0px) - 12px));
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -43,7 +44,7 @@
 html{height:100%;background:var(--bg)}
 body{min-height:100%;margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--f);
   -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;
-  padding-bottom:calc(122px + env(safe-area-inset-bottom,0px))}
+  padding-bottom:120px}
 body.locked{overflow:hidden}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:inherit}
 input,select{font:inherit;color:inherit;margin:0}
@@ -51,7 +52,7 @@ h1,h2,h3,p,ul,ol{margin:0}
 :focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 svg{flex:none}
 .wrap{width:100%;max-width:30rem;margin-inline:auto;padding-inline:16px}
-.stack{display:flex;flex-direction:column;gap:14px;padding-block:calc(14px + env(safe-area-inset-top,0px)) 28px}
+.stack{display:flex;flex-direction:column;gap:14px;padding-block:14px 28px}
 .stack-s{display:flex;flex-direction:column;gap:10px}
 .ja{font-weight:400;font-size:.82em;color:var(--ink-3)}
 .muted{color:var(--ink-2)}
@@ -347,7 +348,8 @@ svg{flex:none}
 .swatch.on{outline:2.5px solid var(--ink);outline-offset:1px}
 
 /* ---------- floating tab bar ---------- */
-.tabbar{position:fixed;z-index:30;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(calc(100% - 40px),360px);
+.tabfade{position:fixed;left:0;right:0;bottom:0;z-index:29;height:calc(var(--tab-gap) + 110px);pointer-events:none;background:linear-gradient(to bottom,transparent,var(--bg) 62%)}
+.tabbar{position:fixed;z-index:30;left:50%;bottom:var(--tab-gap);transform:translateX(-50%);width:min(calc(100% - 32px),420px);
   height:74px;padding:0 9px;border-radius:999px;background:var(--tabbar);display:flex;align-items:center;justify-content:space-between;box-shadow:0 16px 34px rgb(0 0 0 / .22)}
 .tab{position:relative;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;color:rgb(255 255 255 / .72)}
 .tab svg{width:25px;height:25px}
@@ -423,7 +425,7 @@ select.in-r{text-align-last:right;color:var(--ink-2);padding-right:2px;cursor:po
 .as-btn + .as-btn{border-top:1px solid var(--line)}
 .as-btn.danger{color:var(--red-ink)}
 .as-btn.cancel{border-radius:999px;background:var(--pri);color:var(--on-pri);font-weight:500}
-.toast{position:fixed;left:50%;bottom:calc(104px + env(safe-area-inset-bottom,0px));z-index:80;display:flex;align-items:center;gap:16px;
+.toast{position:fixed;left:50%;bottom:calc(var(--tab-gap) + 86px);z-index:80;display:flex;align-items:center;gap:16px;
   max-width:min(28rem,calc(100% - 32px));padding:12px 14px 12px 20px;border-radius:999px;background:var(--pri);color:var(--on-pri);font-size:14.5px;font-weight:500;
   opacity:0;transform:translate(-50%,14px);pointer-events:none;transition:opacity .2s,transform .25s;box-shadow:0 14px 34px rgb(0 0 0 / .25)}
 .toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
@@ -438,6 +440,7 @@ select.in-r{text-align-last:right;color:var(--ink-2);padding-right:2px;cursor:po
 
 <div id="view"></div>
 
+<div class="tabfade" aria-hidden="true"></div>
 <nav class="tabbar" aria-label="Điều hướng">
   <button class="tab" data-tab="week" id="tab-week" aria-label="Tuần"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z"/></svg></button>
   <button class="tab" data-tab="month" id="tab-month" aria-label="Tháng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M8.5 10h7M8.5 14h4.5"/></svg></button>
