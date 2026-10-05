@@ -370,11 +370,15 @@ svg{flex:none}
 .tabfade{position:fixed;left:0;right:0;bottom:0;z-index:29;height:calc(var(--tab-gap) + 110px);pointer-events:none;background:linear-gradient(to bottom,transparent,var(--bg) 62%)}
 .tabbar{position:fixed;z-index:30;left:50%;bottom:var(--tab-gap);transform:translateX(-50%);width:min(calc(100% - 32px),420px);
   height:74px;padding:0 9px;border-radius:999px;background:var(--tabbar);display:flex;align-items:center;justify-content:space-between;box-shadow:0 16px 34px rgb(0 0 0 / .22)}
-.tab{position:relative;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;color:rgb(255 255 255 / .72)}
+.tab{position:relative;display:flex;align-items:center;justify-content:center;height:56px;min-width:56px;padding:0 15.5px;border-radius:999px;
+  color:rgb(255 255 255 / .72);transition:background .25s ease,color .25s ease,padding .25s ease}
+.tab .ti{position:relative;display:grid}
 .tab svg{width:25px;height:25px}
-.tab.on{background:var(--tab-on);color:var(--tab-on-ink)}
-.tab.badged::after{content:"";position:absolute;top:9px;right:9px;width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px var(--tabbar)}
-.tab.on.badged::after{box-shadow:0 0 0 2px var(--tab-on)}
+.tl{max-width:0;opacity:0;overflow:hidden;white-space:nowrap;font-size:15.5px;font-weight:600;transition:max-width .3s cubic-bezier(.2,.8,.2,1),opacity .2s ease,margin .3s ease}
+.tab.on{background:var(--tab-on);color:var(--tab-on-ink);padding:0 22px 0 18px}
+.tab.on .tl{max-width:96px;opacity:1;margin-left:9px}
+.tab.badged .ti::after{content:"";position:absolute;top:-3px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px var(--tabbar)}
+.tab.on.badged .ti::after{box-shadow:0 0 0 2px var(--tab-on)}
 
 /* ---------- sheets ---------- */
 .sheet{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center}
@@ -462,10 +466,10 @@ select.in-r{text-align-last:right;color:var(--ink-2);padding-right:2px;cursor:po
 
 <div class="tabfade" aria-hidden="true"></div>
 <nav class="tabbar" aria-label="Điều hướng">
-  <button class="tab" data-tab="week" id="tab-week" aria-label="Tuần"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z"/></svg></button>
-  <button class="tab" data-tab="month" id="tab-month" aria-label="Tháng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M8.5 10h7M8.5 14h4.5"/></svg></button>
-  <button class="tab" data-tab="shops" id="tab-shops" aria-label="Quán"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 11v8.5h15V11"/><path d="M3 8.5L5 4.5h14l2 4a2.5 2.5 0 0 1-4.5 1.5 2.5 2.5 0 0 1-4.5 0 2.5 2.5 0 0 1-4.5 0A2.5 2.5 0 0 1 3 8.5z"/></svg></button>
-  <button class="tab" data-tab="settings" id="tab-settings" aria-label="Cài đặt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="2.6"/><circle cx="17" cy="7" r="2.6"/><circle cx="7" cy="17" r="2.6"/><circle cx="17" cy="17" r="2.6"/></svg></button>
+  <button class="tab" data-tab="week" id="tab-week" aria-label="Trang chủ"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z"/></svg></span><span class="tl">Trang chủ</span></button>
+  <button class="tab" data-tab="month" id="tab-month" aria-label="Tháng"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M8.5 10h7M8.5 14h4.5"/></svg></span><span class="tl">Tháng</span></button>
+  <button class="tab" data-tab="shops" id="tab-shops" aria-label="Quán"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 11v8.5h15V11"/><path d="M3 8.5L5 4.5h14l2 4a2.5 2.5 0 0 1-4.5 1.5 2.5 2.5 0 0 1-4.5 0 2.5 2.5 0 0 1-4.5 0A2.5 2.5 0 0 1 3 8.5z"/></svg></span><span class="tl">Quán</span></button>
+  <button class="tab" data-tab="settings" id="tab-settings" aria-label="Cài đặt"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="2.6"/><circle cx="17" cy="7" r="2.6"/><circle cx="7" cy="17" r="2.6"/><circle cx="17" cy="17" r="2.6"/></svg></span><span class="tl">Cài đặt</span></button>
 </nav>
 
 <div class="sheet" id="sheet" hidden>
