@@ -377,6 +377,7 @@ svg{flex:none}
 .sheet-head .circle{width:44px;height:44px;background:var(--fill);box-shadow:none}
 .sheet-head .circle svg{width:18px;height:18px}
 .sheet-scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:22px;padding:12px 16px 20px}
+.sheet-scroll > *{flex-shrink:0} /* long forms scroll instead of squashing their groups to zero height */
 .sheet-foot{flex:none;padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));background:var(--card);box-shadow:0 -1px 0 var(--line)}
 .sect{display:flex;flex-direction:column;gap:10px}
 .sect-h{font-size:17px;font-weight:600;letter-spacing:-.015em;padding-inline:4px}
@@ -1186,7 +1187,7 @@ function presetEditors() {
     <label class="g-row"><span>Nghỉ</span><span class="in-unit"><input class="in-r" type="number" inputmode="numeric" min="0" max="480" step="5" data-pf="breakMin" value="${Number(p.breakMin) || 0}"><em>phút</em></span></label>
   </div>`).join('');
 }
-const moneyRow = (id, label, v, ph) => `<label class="g-row"><span>${label}</span><span class="in-unit"><em>¥</em><input id="${id}" class="in-r" type="number" inputmode="numeric" min="0" step="10" value="${esc(v)}" placeholder="${ph}"></span></label>`;
+const moneyRow = (id, label, v, ph) => `<label class="g-row"><span>${label}</span><span class="in-unit"><input id="${id}" class="in-r" type="number" inputmode="numeric" min="0" step="10" value="${esc(v)}" placeholder="${ph}"><em>yên</em></span></label>`;
 function renderShopSheet() {
   const f = shopForm;
   const head = f.returnForm ? sheetHead(f.id ? 'Thông tin quán' : 'Quán mới', 'Lưu xong sẽ quay lại ca đang thêm', 'shop-back', I.prev, 'Quay lại')
@@ -1203,7 +1204,7 @@ function renderShopSheet() {
     </div><p class="sect-f">Ngày lễ Nhật (祝日) được nhận tự động. Phụ cấp đêm (深夜手当) cộng thêm cho phần làm từ 22:00 đến 5:00. Tiền tàu tính khứ hồi, mỗi ngày đi làm một lần.</p></div>
     <div class="sect"><p class="sect-h">Kỳ lương</p><div class="group">
       <label class="g-row"><span>Ngày chốt <span class="ja">締め日</span></span><select id="shop-close" class="in-r">${[0, 5, 10, 15, 20, 25].map((d) => `<option value="${d}" ${String(d) === f.closeDay ? 'selected' : ''}>${d ? `Ngày ${d}` : 'Cuối tháng'}</option>`).join('')}</select></label>
-      <label class="g-row"><span>Ngày nhận <span class="ja">給料日</span></span><span class="in-unit"><em>ngày</em><input id="shop-payday" class="in-r" type="number" inputmode="numeric" min="1" max="31" value="${esc(f.payDay)}" placeholder="25" style="max-width:60px"></span></label>
+      <label class="g-row"><span>Ngày nhận <span class="ja">給料日</span></span><input id="shop-payday" class="in-r" type="number" inputmode="numeric" min="1" max="31" value="${esc(f.payDay)}" placeholder="Ví dụ 25"></label>
       <label class="g-row"><span>Tháng nhận</span><select id="shop-paymonth" class="in-r"><option value="1" ${f.payMonth === '1' ? 'selected' : ''}>Tháng sau</option><option value="0" ${f.payMonth === '0' ? 'selected' : ''}>Cùng tháng chốt</option></select></label>
     </div></div>
     <div class="sect"><p class="sect-h">Ca thường làm</p><div class="stack-s" id="shop-presets">${presetEditors()}</div>
