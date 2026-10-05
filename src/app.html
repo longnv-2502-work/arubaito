@@ -1,0 +1,1546 @@
+<title>Sổ giờ Arubaito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one 30rem column on a soft grey canvas. White cards with large radii, charcoal as the only "accent" (selected pills, primary buttons,
+   floating tab bar); colour comes from the illustrated hero, whose sky turns gold then red as the week fills up. Red is kept for the over-limit alarm. */
+:root{
+  --bg:#F0F0F1; --card:#FFFFFF; --fill:#F4F4F5; --fill-2:#E8E8EA;
+  --ink:#1C1D1F; --ink-2:#86878C; --ink-3:#B6B7BB; --line:rgb(0 0 0 / .07);
+  --pri:#232427; --on-pri:#FFFFFF; --tabbar:#232427; --tab-on:#FFFFFF; --tab-on-ink:#232427;
+  --red:#E5483B; --red-ink:#C2362A; --red-soft:#FCEBE8;
+  --amber:#E9A23B; --amber-ink:#97620F; --amber-soft:#FBF1DF;
+  --green:#2F9E62; --green-ink:#22804D; --green-soft:#E4F3EA;
+  --scrim:rgb(0 0 0 / .32); --shadow:0 1px 2px rgb(0 0 0 / .03),0 10px 28px rgb(0 0 0 / .05);
+  --f:"Onest", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --r-xl:30px; --r-l:24px; --r-m:18px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E0E0F; --card:#1B1C1E; --fill:#26272A; --fill-2:#323337;
+    --ink:#F3F3F4; --ink-2:#9C9DA2; --ink-3:#5F6065; --line:rgb(255 255 255 / .08);
+    --pri:#F3F3F4; --on-pri:#151618; --tabbar:#2A2B2E; --tab-on:#F3F3F4; --tab-on-ink:#151618;
+    --red:#FF5A4D; --red-ink:#FF7D72; --red-soft:#3A1916;
+    --amber:#F2B24B; --amber-ink:#F2B24B; --amber-soft:#33280F;
+    --green:#45C482; --green-ink:#45C482; --green-soft:#12291D;
+    --scrim:rgb(0 0 0 / .6); --shadow:none;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E0E0F; --card:#1B1C1E; --fill:#26272A; --fill-2:#323337;
+  --ink:#F3F3F4; --ink-2:#9C9DA2; --ink-3:#5F6065; --line:rgb(255 255 255 / .08);
+  --pri:#F3F3F4; --on-pri:#151618; --tabbar:#2A2B2E; --tab-on:#F3F3F4; --tab-on-ink:#151618;
+  --red:#FF5A4D; --red-ink:#FF7D72; --red-soft:#3A1916;
+  --amber:#F2B24B; --amber-ink:#F2B24B; --amber-soft:#33280F;
+  --green:#45C482; --green-ink:#45C482; --green-soft:#12291D;
+  --scrim:rgb(0 0 0 / .6); --shadow:none;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;background:var(--bg)}
+body{min-height:100%;margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--f);
+  -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;
+  padding-bottom:calc(122px + env(safe-area-inset-bottom,0px))}
+body.locked{overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:inherit}
+input,select{font:inherit;color:inherit;margin:0}
+h1,h2,h3,p,ul,ol{margin:0}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+svg{flex:none}
+.wrap{width:100%;max-width:30rem;margin-inline:auto;padding-inline:16px}
+.stack{display:flex;flex-direction:column;gap:14px;padding-block:calc(14px + env(safe-area-inset-top,0px)) 28px}
+.stack-s{display:flex;flex-direction:column;gap:10px}
+.ja{font-weight:400;font-size:.82em;color:var(--ink-3)}
+.muted{color:var(--ink-2)}
+.t{font-variant-numeric:tabular-nums}
+.press:active,.pill:active,.circle:active,.day:active,.tab:active,.cta:active,.chip:active{transform:scale(.96)}
+.press,.pill,.circle,.day,.tab,.cta,.chip{transition:transform .12s ease}
+
+/* ---------- headers ---------- */
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:4px}
+.head h1{font-size:28px;font-weight:600;letter-spacing:-.03em;line-height:1.15;text-wrap:balance}
+.head p{font-size:15px;color:var(--ink-2);margin-top:2px}
+.head-c{display:grid;grid-template-columns:48px minmax(0,1fr) 48px;align-items:center;gap:8px;padding-top:4px}
+.head-c .title{text-align:center;min-width:0}
+.head-c .title b{display:block;font-size:21px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.head-c .title small{font-size:14px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.circle{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.circle svg{width:21px;height:21px}
+.circle.dark{background:var(--pri);color:var(--on-pri);box-shadow:none}
+.circle.sm{width:36px;height:36px}
+.circle.sm svg{width:17px;height:17px}
+
+/* search-bar style week switcher */
+.bar{display:flex;align-items:center;gap:10px}
+.switcher{flex:1;min-width:0;display:flex;align-items:center;gap:4px;height:56px;padding:0 6px;border-radius:999px;background:var(--card);box-shadow:var(--shadow)}
+.switcher button.arrow{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--ink-2)}
+.switcher button.arrow svg{width:19px;height:19px}
+.switcher .lbl-c{flex:1;min-width:0;text-align:center;line-height:1.2}
+.switcher .lbl-c b{display:block;font-size:15.5px;font-weight:600;white-space:nowrap}
+.switcher .lbl-c small{font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.bar .circle.dark{width:56px;height:56px}
+.bar .circle.dark svg{width:24px;height:24px}
+
+/* ---------- section titles ---------- */
+.sec{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:10px}
+.sec h2{font-size:21px;font-weight:600;letter-spacing:-.025em}
+.sec h2 span{color:var(--ink-3);font-weight:500}
+.ulink{font-size:15px;font-weight:500;color:var(--ink);text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1.5px;white-space:nowrap}
+
+/* ---------- pills ---------- */
+.pills{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding-inline:16px}
+.pills::-webkit-scrollbar{display:none}
+.pill{flex:none;display:inline-flex;align-items:center;gap:7px;height:46px;padding:0 20px;border-radius:999px;background:var(--card);color:var(--ink-2);font-size:15.5px;font-weight:500;white-space:nowrap}
+.pill.on{background:var(--pri);color:var(--on-pri)}
+.pill svg{width:16px;height:16px}
+
+/* ---------- week day pills ---------- */
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.day{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:82px;border-radius:999px;background:var(--card);text-align:center}
+.day small{font-size:12px;font-weight:500;color:var(--ink-2)}
+.day b{font-size:20px;font-weight:600;letter-spacing:-.03em;line-height:1.1;font-variant-numeric:tabular-nums}
+.day em{font-style:normal;font-size:11px;font-weight:600;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.day.has em{color:var(--ink)}
+.day.over em{color:var(--red)}
+.day.hol small{color:var(--red-ink)}
+.day.today{background:var(--pri);color:var(--on-pri)}
+.day.today small,.day.today em{color:var(--on-pri);opacity:.75}
+
+/* ---------- illustrated hero ---------- */
+.hero{position:relative;overflow:hidden;border-radius:var(--r-xl);min-height:390px;color:#FFFFFF;isolation:isolate;
+  --sky-1:#7FB0BC;--sky-2:#B9D3D1;--sky-3:#F0D6B4;--sun:#FFF5DE;--mt-1:#7184A6;--mt-2:#39445E;--snow:#F7F5F1;--hill-1:#44534A;--hill-2:#26302B}
+.hero.near{--sky-1:#E59A52;--sky-2:#F2C88A;--sky-3:#FAE3BE;--sun:#FFF0C8;--mt-1:#8E5E4D;--mt-2:#4A3330;--snow:#FBEFE3;--hill-1:#5A4636;--hill-2:#33281F}
+.hero.over{--sky-1:#B93A33;--sky-2:#E5694B;--sky-3:#F4A877;--sun:#FFD7A3;--mt-1:#5E2C2A;--mt-2:#2B1414;--snow:#F6D9CF;--hill-1:#3A1D1B;--hill-2:#1F0E0D}
+.hero .art{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
+.hero-in{position:absolute;inset:0;text-shadow:0 1px 14px rgb(0 0 0 / .28);display:flex;flex-direction:column;justify-content:space-between;padding:16px}
+.hero-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.glass{background:rgb(255 255 255 / .2);text-shadow:0 1px 3px rgb(0 0 0 / .3);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);border:1px solid rgb(255 255 255 / .28)}
+.glass-chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;font-size:13.5px;font-weight:500;white-space:nowrap}
+.glass-circle{width:44px;height:44px;border-radius:50%;display:grid;place-items:center}
+.glass-circle svg{width:20px;height:20px}
+.hero-bottom{display:flex;flex-direction:column;gap:6px;padding:4px 4px 0}
+.hero-bottom > small{font-size:14px;opacity:.85}
+.hero-num{display:flex;align-items:baseline;gap:8px}
+.hero-num b{font-size:clamp(48px,14.5vw,60px);font-weight:600;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums}
+.hero-num span{font-size:20px;font-weight:500;opacity:.8}
+.hero-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
+.o-chip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border-radius:999px;border:1px solid rgb(255 255 255 / .55);font-size:13px;font-weight:600}
+.o-chip svg{width:14px;height:14px}
+.hero.over .o-chip{background:#FFFFFF;color:#B93A33;border-color:#FFFFFF}
+.thin{height:5px;border-radius:999px;background:rgb(255 255 255 / .28);overflow:hidden;display:flex;margin:6px 0 4px}
+.thin i{display:block;height:100%;background:#FFFFFF;border-radius:999px}
+.thin u{display:block;height:100%;margin-left:2px;background:repeating-linear-gradient(135deg,#FFFFFF 0 3px,transparent 3px 6px)}
+.cta-glass{display:flex;align-items:center;gap:10px;height:62px;padding:0 7px 0 24px;border-radius:999px;margin-top:8px;width:100%;color:#FFFFFF;font-size:16px;font-weight:500}
+.cta-glass span:first-child{flex:1;text-align:center;padding-left:40px}
+.cta-glass .cta-dot{text-shadow:none;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#FFFFFF;color:#1C1D1F}
+.cta-glass .cta-dot svg{width:20px;height:20px}
+
+/* ---------- cards ---------- */
+.card{padding:18px;border-radius:var(--r-l);background:var(--card);box-shadow:var(--shadow)}
+.card-h{display:flex;justify-content:space-between;align-items:baseline;gap:4px 10px;flex-wrap:wrap;margin-bottom:14px}
+.card-h h2{font-size:18px;font-weight:600;letter-spacing:-.02em}
+.card-h small{font-size:13px;color:var(--ink-2)}
+.sum-card{display:flex;flex-direction:column;gap:10px}
+.sum-top{display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--ink-2);font-size:14.5px}
+.badge{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 11px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap}
+.badge svg{width:14px;height:14px}
+.badge.ok{background:var(--green-soft);color:var(--green-ink)}
+.badge.near{background:var(--amber-soft);color:var(--amber-ink)}
+.badge.over{background:var(--red);color:#FFFFFF}
+.big{display:flex;align-items:baseline;gap:8px}
+.big b{font-size:clamp(44px,13vw,54px);font-weight:600;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums}
+.big span{font-size:19px;font-weight:500;color:var(--ink-2)}
+.meter{display:flex;height:10px;border-radius:999px;background:var(--fill-2);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:999px;background:var(--pri)}
+.meter.near i{background:var(--amber)}
+.meter.over i{background:var(--red);border-radius:999px 0 0 999px}
+.meter u{display:block;height:100%;margin-left:2px;background:repeating-linear-gradient(135deg,var(--red) 0 3px,transparent 3px 6px)}
+.foot{font-size:14.5px;color:var(--ink-2)}
+
+/* alerts */
+.alert{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;padding:16px;border-radius:var(--r-l);background:var(--red-soft)}
+.alert-ico{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--red);color:#FFFFFF}
+.alert-ico svg{width:20px;height:20px}
+.alert h3{font-size:16px;font-weight:600;line-height:1.3;color:var(--red-ink);text-wrap:balance}
+.alert p,.alert li{font-size:14.5px;margin-top:4px}
+.alert ul{padding-left:18px;margin-top:2px}
+.alert .cta{margin-top:12px}
+.alert.note{background:var(--card);box-shadow:var(--shadow)}
+.alert.note .alert-ico{background:var(--fill);color:var(--ink)}
+.alert.note h3{color:var(--ink)}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tiles.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.tile{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:var(--r-l);background:var(--card);box-shadow:var(--shadow);min-width:0}
+.tile-ico{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--fill);color:var(--ink);margin-bottom:8px}
+.tile-ico svg{width:18px;height:18px}
+.tile b{font-size:clamp(16px,5.2vw,21px);font-weight:600;letter-spacing:-.03em;line-height:1.15;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tiles.two .tile b{font-size:21px}
+.tile small{font-size:12.5px;line-height:1.3;color:var(--ink-2)}
+.tile.good b{color:var(--green-ink)} .tile.bad b{color:var(--red-ink)}
+
+/* next shift + shift cards */
+.thumb{width:62px;height:62px;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--fill);flex:none;line-height:1}
+.thumb b{font-size:23px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.thumb small{font-size:11.5px;font-weight:500;color:var(--ink-2);margin-top:4px}
+.next{display:flex;flex-direction:column;gap:14px;width:100%;padding:12px 12px 14px;border-radius:var(--r-xl);background:var(--card);box-shadow:var(--shadow);text-align:left}
+.next-top{display:flex;align-items:center;gap:14px;padding:6px 6px 0}
+.next-top .thumb{width:72px;height:72px;border-radius:20px;background:var(--pri);color:var(--on-pri)}
+.next-top .thumb small{color:var(--on-pri);opacity:.7}
+.next-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.next-main small{font-size:13px;color:var(--ink-2)}
+.next-main b{font-size:19px;font-weight:600;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.next-main span{font-size:14px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.next-foot{display:flex;align-items:center;gap:8px;padding:0 4px 0 6px}
+.next-foot .chips-s{flex:1;min-width:0}
+.chips-s{display:flex;flex-wrap:wrap;gap:6px}
+.chip-s{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 11px;border-radius:999px;border:1px solid var(--line);font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip-s svg{width:14px;height:14px;color:var(--ink-2)}
+.go{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--pri);color:var(--on-pri);flex:none}
+.go svg{width:20px;height:20px}
+
+.swipe{position:relative;border-radius:var(--r-l);overflow:hidden}
+.swipe-del{position:absolute;top:0;right:0;bottom:0;width:120px;padding-left:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  background:var(--red);color:#FFFFFF;font-size:12px;font-weight:600;opacity:0}
+.swipe-del svg{width:22px;height:22px}
+.swipe.reveal .swipe-del{opacity:1}
+.shift{position:relative;display:flex;align-items:center;gap:14px;width:100%;padding:12px 16px 12px 12px;border-radius:var(--r-l);background:var(--card);box-shadow:var(--shadow);
+  text-align:left;touch-action:pan-y;transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+.shift.over{background:var(--red-soft);box-shadow:none}
+.shift.over .thumb{background:var(--red);color:#FFFFFF}
+.shift.over .thumb small{color:#FFFFFF;opacity:.8}
+.shift-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.shift-main small{font-size:12.5px;color:var(--ink-2)}
+.shift-shop{display:flex;align-items:center;gap:7px;font-size:16.5px;font-weight:600;letter-spacing:-.01em;min-width:0}
+.shift-shop span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.shift-time{font-size:13.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.shift-dur{font-size:19px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.shift.over .shift-dur{color:var(--red-ink)}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--fill);color:var(--ink-2);white-space:nowrap;margin-right:4px}
+.tag.red{background:var(--red);color:#FFFFFF}
+.tag.dark{background:var(--pri);color:var(--on-pri)}
+.tag.hol{background:var(--red-soft);color:var(--red-ink)}
+.shift.over .tag:not(.red){background:var(--card)}
+.empty-line{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:18px;border-radius:var(--r-l);background:var(--card);box-shadow:var(--shadow);color:var(--ink-2);font-size:15px}
+
+/* lists */
+.list{border-radius:var(--r-l);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
+.li{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:62px;padding:10px 16px;text-align:left}
+.li + .li::before{content:"";position:absolute;top:0;left:64px;right:16px;border-top:1px solid var(--line)}
+.li-ico{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--fill);color:var(--ink);flex:none}
+.li-ico svg{width:18px;height:18px}
+.li-ico.red{background:var(--red-soft);color:var(--red-ink)}
+.li-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.li-main b{font-size:16px;font-weight:500}
+.li-main small{font-size:13px;color:var(--ink-2)}
+.li-end{display:flex;align-items:center;gap:6px;color:var(--ink-2);flex:none;font-variant-numeric:tabular-nums}
+.li-end svg{width:17px;height:17px;color:var(--ink-3)}
+.li.danger b{color:var(--red-ink)}
+.list-h{font-size:14px;font-weight:500;color:var(--ink-2);padding-inline:6px;margin-top:10px}
+.list-f{font-size:13px;line-height:1.45;color:var(--ink-2);padding-inline:6px}
+.avatar{--c:#8E8E93;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#FFFFFF;font-size:19px;font-weight:600;flex:none}
+.avatar.sm{width:36px;height:36px;font-size:14px}
+.avatar.lg{width:56px;height:56px;font-size:22px}
+.avatar.xl{width:84px;height:84px;font-size:34px;margin-inline:auto}
+
+/* segmented pill switch */
+.seg{display:flex;gap:4px;padding:4px;border-radius:999px;background:var(--card)}
+.seg button{flex:1;min-height:38px;padding:0 10px;border-radius:999px;font-size:14.5px;font-weight:500;color:var(--ink-2);text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+.seg button.on{background:var(--pri);color:var(--on-pri)}
+.list .seg,.group .seg{background:var(--fill)}
+.group .seg{background:var(--card)}
+
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) minmax(0,1.3fr);gap:4px}
+.cal-h{font-size:11.5px;font-weight:500;color:var(--ink-2);text-align:center;padding-bottom:3px}
+.cell{position:relative;min-height:48px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;overflow:hidden;background:var(--fill);font-variant-numeric:tabular-nums}
+.cell::before{content:"";position:absolute;inset:0;background:var(--pri);opacity:calc(var(--k,0) * .9)}
+.cell>*{position:relative}
+.cell.dk{color:var(--on-pri)}
+.cell.dk .h{color:var(--on-pri);opacity:.75}
+.cell .d{font-size:14px;font-weight:600;line-height:1}
+.cell .h{font-size:10px;font-weight:500;color:var(--ink-2);line-height:1}
+.cell.out{opacity:.35}
+.cell.hol .d{color:var(--red-ink)}
+.cell.dk.hol .d{color:#FFB4AB}
+.cell.today{box-shadow:inset 0 0 0 2px var(--ink)}
+.cell.wk-over{box-shadow:inset 0 -3px 0 var(--red)}
+.cell.today.wk-over{box-shadow:inset 0 0 0 2px var(--ink),inset 0 -4px 0 var(--red)}
+.sum{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:14px;border:1px solid var(--line);font-size:12px;font-weight:600;line-height:1.15;font-variant-numeric:tabular-nums}
+.sum small{font-size:9.5px;font-weight:500;color:var(--ink-2)}
+.sum.over{background:var(--red);border-color:var(--red);color:#FFFFFF} .sum.over small{color:#FFFFFF}
+.sum.near{color:var(--amber-ink);border-color:var(--amber)}
+
+/* pay */
+.pay-hero{display:flex;flex-direction:column;gap:4px;padding:22px 20px 20px;border-radius:var(--r-xl);background:var(--pri);color:var(--on-pri)}
+.pay-hero .k{font-size:14.5px;opacity:.7}
+.pay-big{font-size:clamp(42px,13vw,56px);font-weight:600;letter-spacing:-.045em;line-height:1.05;font-variant-numeric:tabular-nums}
+.pay-hero .s{font-size:14.5px;opacity:.7}
+.pay-dates{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.pay-dates span{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;border:1px solid currentColor;font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;opacity:.9}
+.acc{border-radius:var(--r-l);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
+.acc-head{display:flex;align-items:center;gap:14px;width:100%;padding:12px 14px 12px 12px;text-align:left}
+.acc-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.acc-main small{font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc-main b{font-size:16.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acc-amt{font-size:17px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.acc-chev{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--ink);transition:transform .25s}
+.acc-chev svg{width:18px;height:18px}
+.acc.open .acc-chev{transform:rotate(180deg)}
+.acc-body{display:flex;flex-direction:column;gap:12px;margin:0 12px 12px;padding:14px 16px;border-radius:var(--r-m);background:var(--fill)}
+.acc-body .k{font-size:13px;color:var(--ink-2)}
+.acc-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:15px}
+.acc-row span{font-variant-numeric:tabular-nums}
+.acc-row b{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* shops */
+.shop{display:flex;flex-direction:column;gap:16px;padding:18px;border-radius:var(--r-xl);background:var(--card);box-shadow:var(--shadow)}
+.shop-head{display:flex;align-items:center;gap:14px;width:100%;text-align:left}
+.shop-name{flex:1;min-width:0;display:flex;flex-direction:column}
+.shop-name b{font-size:21px;font-weight:600;letter-spacing:-.025em;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow-wrap:anywhere}
+.shop-name small{display:flex;align-items:center;gap:5px;font-size:14px;color:var(--ink-2);min-width:0}
+.shop-name small svg{width:15px;height:15px}
+.shop-name small span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rate{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.shop-links{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--ink-2)}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fact{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:var(--r-m);background:var(--fill);min-width:0}
+.fact small{font-size:12px;color:var(--ink-2)}
+.fact b{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.info{display:flex;flex-direction:column;gap:6px}
+.info p{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:var(--ink-2);overflow-wrap:anywhere}
+.info svg{width:16px;height:16px;margin-top:2px;color:var(--ink-3)}
+.presets{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin-inline:-18px;padding-inline:18px;scroll-snap-type:x mandatory}
+.presets::-webkit-scrollbar{display:none}
+.pcard{flex:none;width:172px;scroll-snap-align:start;display:flex;flex-direction:column;gap:2px;padding:14px;border-radius:var(--r-m);background:var(--fill);text-align:left;position:relative}
+.pcard b{font-size:16px;font-weight:600;padding-right:4px}
+.pcard .pt{font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums}
+.pcard small{font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums;padding-right:50px}
+.pcard .go{position:absolute;right:10px;bottom:10px;width:40px;height:40px}
+.pcard .go svg{width:17px;height:17px}
+.pcard{min-height:112px}
+
+/* buttons, chips */
+.cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;font-weight:500;font-size:15px;white-space:nowrap}
+.cta svg{width:18px;height:18px}
+.cta.sm{min-height:38px;padding:0 15px;font-size:14px}
+.cta.dark{background:var(--pri);color:var(--on-pri)}
+.cta.light{background:var(--fill);color:var(--ink)}
+.cta.white{background:var(--card);color:var(--ink)}
+.cta.red{background:var(--red);color:#FFFFFF}
+.cta.block{width:100%;min-height:58px;font-size:16.5px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:7px;max-width:100%;height:42px;padding:0 16px;border-radius:999px;background:var(--fill);font-size:15px;font-weight:500;color:var(--ink)}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip.on{background:var(--pri);color:var(--on-pri)}
+.chip.dashed{background:none;box-shadow:inset 0 0 0 1.5px var(--ink-3);color:var(--ink)}
+.chip .t{opacity:.7}
+.group .chip:not(.on){background:var(--card)}
+.link-btn{color:var(--ink);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.swatches{display:flex;flex-wrap:wrap;gap:12px;padding:4px 2px}
+.swatch{width:40px;height:40px;border-radius:50%;box-shadow:inset 0 0 0 3px var(--card)}
+.swatch.on{outline:2.5px solid var(--ink);outline-offset:1px}
+
+/* ---------- floating tab bar ---------- */
+.tabbar{position:fixed;z-index:30;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(calc(100% - 40px),360px);
+  height:74px;padding:0 9px;border-radius:999px;background:var(--tabbar);display:flex;align-items:center;justify-content:space-between;box-shadow:0 16px 34px rgb(0 0 0 / .22)}
+.tab{position:relative;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;color:rgb(255 255 255 / .72)}
+.tab svg{width:25px;height:25px}
+.tab.on{background:var(--tab-on);color:var(--tab-on-ink)}
+.tab.badged::after{content:"";position:absolute;top:9px;right:9px;width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px var(--tabbar)}
+.tab.on.badged::after{box-shadow:0 0 0 2px var(--tab-on)}
+
+/* ---------- sheets ---------- */
+.sheet{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center}
+.sheet-bg{position:absolute;inset:0;background:var(--scrim);animation:fade .25s ease}
+.sheet-panel{position:relative;display:flex;flex-direction:column;width:100%;max-width:30rem;max-height:calc(100% - 14px - env(safe-area-inset-top,0px));
+  background:var(--card);border-radius:32px 32px 0 0;animation:up .32s cubic-bezier(.2,.8,.2,1)}
+#sheet-body{display:flex;flex-direction:column;flex:1;min-height:0}
+.grabber{width:44px;height:5px;border-radius:3px;background:var(--fill-2);margin:9px auto 0;flex:none}
+.sheet-head{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;padding:8px 16px 6px;flex:none}
+.sheet-head .title{text-align:center;min-width:0}
+.sheet-head .title b{display:block;font-size:19px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sheet-head .title small{font-size:13.5px;color:var(--ink-2)}
+.sheet-head .circle{width:44px;height:44px;background:var(--fill);box-shadow:none}
+.sheet-head .circle svg{width:18px;height:18px}
+.sheet-scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:22px;padding:12px 16px 20px}
+.sheet-foot{flex:none;padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));background:var(--card);box-shadow:0 -1px 0 var(--line)}
+.sect{display:flex;flex-direction:column;gap:10px}
+.sect-h{font-size:17px;font-weight:600;letter-spacing:-.015em;padding-inline:4px}
+.sect-f{font-size:13px;line-height:1.45;color:var(--ink-2);padding-inline:4px}
+.group{border-radius:22px;background:var(--fill);overflow:hidden}
+.g-row{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:8px 16px;font-size:16px;text-align:left}
+.g-row + .g-row::before{content:"";position:absolute;top:0;left:16px;right:16px;border-top:1px solid var(--line)}
+.g-row > span:first-child{flex:1;min-width:0}
+.g-row.col{flex-direction:column;align-items:stretch;gap:10px;padding-block:14px}
+.g-row.center{justify-content:center;gap:8px;font-weight:500}
+.g-row.center svg{width:19px;height:19px}
+.g-row.danger{color:var(--red-ink)}
+.sheet .tile,.sheet .shift:not(.over),.sheet .empty-line{background:var(--fill);box-shadow:none}
+.sheet .shift:not(.over) .thumb{background:var(--card)}
+.in-r{flex:1;min-width:0;width:100%;border:0;background:none;padding:0;text-align:right;font-size:16px;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none}
+.in-l{flex:1;min-width:0;border:0;background:none;padding:0;font-size:16px;font-weight:600;color:var(--ink);outline:none}
+.in-r::placeholder,.in-l::placeholder{color:var(--ink-3);font-weight:400}
+.in-pill{min-height:38px;padding:6px 12px;border:0;border-radius:12px;background:var(--card);font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums;-webkit-appearance:none;appearance:none}
+.in-pill:focus{outline:2px solid var(--ink);outline-offset:0}
+input[type=date].in-pill{min-width:142px} input[type=time].in-pill{min-width:94px}
+.list .in-pill{background:var(--fill);width:72px;text-align:right}
+.in-unit{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex:1;min-width:0}
+.in-unit em{font-style:normal;color:var(--ink-2)}
+select.in-r{text-align-last:right;color:var(--ink-2);padding-right:2px;cursor:pointer}
+.mini-x{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--card);color:var(--ink-2);flex:none}
+.mini-x svg{width:14px;height:14px}
+.add-row{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:22px;border:1.5px dashed var(--ink-3);color:var(--ink);font-weight:500;font-size:15.5px}
+.add-row svg{width:18px;height:18px}
+.preview{display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:22px;background:var(--fill);font-size:14.5px}
+.pv-big{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.pv-big b{font-size:28px;font-weight:600;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.pv-line{display:flex;gap:8px;align-items:flex-start}
+.pv-line svg{width:17px;height:17px;margin-top:1px}
+.pv-line.over{color:var(--red-ink);font-weight:500}
+.pv-line.near{color:var(--amber-ink);font-weight:500}
+.pv-line.ok{color:var(--green-ink);font-weight:500}
+.pv-line .yen{font-weight:600;color:var(--ink)}
+.err{color:var(--red-ink);font-size:14.5px;font-weight:500;padding-inline:4px}
+.switch{appearance:none;-webkit-appearance:none;width:51px;height:31px;border-radius:16px;background:var(--fill-2);position:relative;flex:none;cursor:pointer;transition:background .2s;margin:0}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#FFFFFF;box-shadow:0 3px 8px rgb(0 0 0 / .15),0 1px 1px rgb(0 0 0 / .16);transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.switch:checked{background:var(--pri)}
+.switch:checked::after{transform:translateX(20px);background:var(--on-pri)}
+
+/* ---------- action sheet + toast ---------- */
+.as{position:fixed;inset:0;z-index:75;display:flex;align-items:flex-end;justify-content:center}
+.as-bg{position:absolute;inset:0;background:var(--scrim);animation:fade .2s ease}
+.as-panel{position:relative;display:flex;flex-direction:column;gap:8px;width:100%;max-width:30rem;padding:8px 10px calc(12px + env(safe-area-inset-bottom,0px));animation:up .3s cubic-bezier(.2,.8,.2,1)}
+.as-group{background:var(--card);border-radius:24px;overflow:hidden}
+.as-head{padding:16px 20px;text-align:center;font-size:13.5px;color:var(--ink-2);border-bottom:1px solid var(--line)}
+.as-head b{display:block;font-size:15px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.as-btn{display:block;width:100%;min-height:58px;font-size:17px;font-weight:500;color:var(--ink);text-align:center}
+.as-btn + .as-btn{border-top:1px solid var(--line)}
+.as-btn.danger{color:var(--red-ink)}
+.as-btn.cancel{border-radius:999px;background:var(--pri);color:var(--on-pri);font-weight:500}
+.toast{position:fixed;left:50%;bottom:calc(104px + env(safe-area-inset-bottom,0px));z-index:80;display:flex;align-items:center;gap:16px;
+  max-width:min(28rem,calc(100% - 32px));padding:12px 14px 12px 20px;border-radius:999px;background:var(--pri);color:var(--on-pri);font-size:14.5px;font-weight:500;
+  opacity:0;transform:translate(-50%,14px);pointer-events:none;transition:opacity .2s,transform .25s;box-shadow:0 14px 34px rgb(0 0 0 / .25)}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{font-weight:600;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+.toast.bad{background:var(--red);color:#FFFFFF}
+
+@keyframes up{from{transform:translateY(48px);opacity:.5}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media (max-width:360px){.days{gap:4px}.day b{font-size:17px}.tiles{gap:8px}.tile{padding:12px 10px}.tile b{font-size:18px}.head h1{font-size:25px}}
+</style>
+
+<div id="view"></div>
+
+<nav class="tabbar" aria-label="Điều hướng">
+  <button class="tab" data-tab="week" id="tab-week" aria-label="Tuần"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z"/></svg></button>
+  <button class="tab" data-tab="month" id="tab-month" aria-label="Tháng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M8.5 10h7M8.5 14h4.5"/></svg></button>
+  <button class="tab" data-tab="shops" id="tab-shops" aria-label="Quán"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 11v8.5h15V11"/><path d="M3 8.5L5 4.5h14l2 4a2.5 2.5 0 0 1-4.5 1.5 2.5 2.5 0 0 1-4.5 0 2.5 2.5 0 0 1-4.5 0A2.5 2.5 0 0 1 3 8.5z"/></svg></button>
+  <button class="tab" data-tab="settings" id="tab-settings" aria-label="Cài đặt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="2.6"/><circle cx="17" cy="7" r="2.6"/><circle cx="7" cy="17" r="2.6"/><circle cx="17" cy="17" r="2.6"/></svg></button>
+</nav>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-bg" data-act="close"></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true"><div class="grabber"></div><div id="sheet-body"></div></div>
+</div>
+<div class="as" id="as" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="import-file" accept="application/json,.json" hidden>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const pad = (n) => String(n).padStart(2, '0');
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+/* ---------- dates: local "YYYY-MM-DD" strings ---------- */
+const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseD = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12); };
+const addDays = (s, n) => { const d = parseD(s); d.setDate(d.getDate() + n); return ymd(d); };
+const daysBetween = (a, b) => Math.round((parseD(b) - parseD(a)) / 86400000);
+const todayStr = () => ymd(new Date());
+const dowOf = (s) => parseD(s).getDay();
+const fmtDM = (s) => `${s.slice(8, 10)}/${s.slice(5, 7)}`;
+const daysInMonth = (ym) => { const [y, m] = ym.split('-').map(Number); return new Date(y, m, 0).getDate(); };
+const addMonths = (ym, n) => { const [y, m] = ym.split('-').map(Number); const d = new Date(y, m - 1 + n, 1, 12); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
+const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || '') && !isNaN(parseD(s));
+const isTime = (s) => /^\d{2}:\d{2}$/.test(s || '');
+const DOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const DOW_LONG = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+const DOW_JA = ['日', '月', '火', '水', '木', '金', '土'];
+
+/* ---------- durations in minutes ---------- */
+const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+const grossMin = (s) => { let d = toMin(s.end) - toMin(s.start); if (d <= 0) d += 1440; return d; };
+const shiftMin = (s) => Math.max(0, grossMin(s) - (Number(s.breakMin) || 0));
+const isOvernight = (s) => toMin(s.end) <= toMin(s.start);
+const fmtH = (min) => { const neg = min < 0; min = Math.round(Math.abs(min)); const h = Math.floor(min / 60), m = min % 60; return (neg ? '−' : '') + h + 'h' + (m ? pad(m) : ''); };
+const yen = (n) => '¥' + Math.round(n).toLocaleString('ja-JP');
+
+const svg = (d, w = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const I = {
+  prev: svg('<path d="M15 5l-7 7 7 7"/>', 2.4),
+  next: svg('<path d="M9 5l7 7-7 7"/>', 2.4),
+  chev: svg('<path d="M9 6l6 6-6 6"/>', 2.2),
+  plus: svg('<path d="M12 5v14M5 12h14"/>', 2.6),
+  x: svg('<path d="M6 6l12 12M18 6L6 18"/>', 2.4),
+  warn: svg('<path d="M12 3.5l9 16H3z"/><path d="M12 10v4M12 17v.01"/>', 2.2),
+  ok: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>', 2.6),
+  info: svg('<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>', 2.2),
+  pin: svg('<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>'),
+  phone: svg('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>'),
+  note: svg('<rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/>'),
+  yen: svg('<path d="M6 4l6 8 6-8M12 12v8M7.5 13h9M7.5 16.5h9"/>'),
+  cal: svg('<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  moon: svg('<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>'),
+  train: svg('<rect x="5" y="3" width="14" height="13" rx="3"/><path d="M5 10h14M8 21l2-5M16 21l-2-5M9 13h.01M15 13h.01"/>'),
+  list: svg('<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>', 2.4),
+  trash: svg('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>'),
+  repeat: svg('<path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4"/>'),
+  shield: svg('<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/>'),
+  sun: svg('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/>'),
+  hourglass: svg('<path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9"/>'),
+  download: svg('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'),
+  upload: svg('<path d="M12 16V5M7 10l5-5 5 5M5 20h14"/>'),
+  sparkle: svg('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>'),
+  device: svg('<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>'),
+  target: svg('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>'),
+  bolt: svg('<path d="M13 2.5L4.5 13.5H12l-1 8 8.5-11H12z"/>'),
+  arrow: svg('<path d="M5 12h14M13 6l6 6-6 6"/>', 2.2),
+  down: svg('<path d="M6 9l6 6 6-6"/>', 2.2),
+  pencil: svg('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>'),
+  today: svg('<rect x="3.5" y="5" width="17" height="15.5" rx="4"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none"/>'),
+};
+
+/* ---------- state ---------- */
+const LS_DATA = 'arubaito.data.v1', LS_UI = 'arubaito.ui.v1';
+const DEFAULTS = { weekLimit: 28, weekStart: 1, vacWeekLimit: 40, vacations: [] };
+const TABS = ['week', 'month', 'shops', 'settings'];
+const SHOP_COLORS = ['#2F6FDE', '#E07A1F', '#169B6B', '#A54FC4', '#C99A12', '#1597AA', '#D8527A', '#64748B'];
+
+// docs mirrors the storage layout: 'config' = {shops, settings}; 'm-YYYY-MM' = {shifts:[...]} per month.
+let docs = {};
+let _st = null;
+let idx = { day: {}, byDate: {} };
+const ui = { tab: 'week', ws: null, ym: null };
+
+const settings = () => _st || (_st = { ...DEFAULTS, ...((docs.config && docs.config.settings) || {}) });
+const shops = () => (docs.config && docs.config.shops) || [];
+const shopById = (id) => shops().find((s) => s.id === id);
+const shopColor = (id) => (shopById(id) || {}).color || '#64748B';
+const shopName = (id) => (shopById(id) || {}).name || 'Quán đã xoá';
+const presetsOf = (id) => ((shopById(id) || {}).presets || []).filter((p) => isTime(p.start) && isTime(p.end));
+const presetLabel = (p) => `${p.name ? esc(p.name) + ' · ' : ''}<span class="t">${esc(p.start)}–${esc(p.end)}</span>`;
+const samePreset = (p, s) => p.start === s.start && p.end === s.end && (Number(p.breakMin) || 0) === (Number(s.breakMin) || 0);
+const mkey = (date) => 'm-' + date.slice(0, 7);
+function ensureConfig() {
+  if (!docs.config) docs.config = {};
+  if (!Array.isArray(docs.config.shops)) docs.config.shops = [];
+  if (!docs.config.settings) docs.config.settings = {};
+  return docs.config;
+}
+function allShifts() {
+  const out = [];
+  for (const k in docs) if (k.startsWith('m-') && docs[k] && Array.isArray(docs[k].shifts)) out.push(...docs[k].shifts);
+  return out;
+}
+function buildIndex(list) {
+  const day = {}, byDate = {};
+  for (const s of list) { day[s.date] = (day[s.date] || 0) + shiftMin(s); (byDate[s.date] || (byDate[s.date] = [])).push(s); }
+  for (const k in byDate) byDate[k].sort((a, b) => a.start.localeCompare(b.start));
+  return { day, byDate };
+}
+
+/* ---------- limits ---------- */
+const weekStartOf = (s) => addDays(s, -((dowOf(s) - settings().weekStart + 7) % 7));
+const isVac = (d) => settings().vacations.some((v) => v.start <= d && d <= v.end);
+function weekLimitMin(start) { // a 7-day window counts as vacation only when every day is inside a vacation period
+  const st = settings();
+  for (let i = 0; i < 7; i++) if (!isVac(addDays(start, i))) return st.weekLimit * 60;
+  return st.vacWeekLimit * 60;
+}
+const perDayMin = (d) => ((isVac(d) ? settings().vacWeekLimit : settings().weekLimit) * 60) / 7; // weekly limit spread over 7 days, for the monthly projection
+const sumRange = (day, start, n) => { let s = 0; for (let i = 0; i < n; i++) s += day[addDays(start, i)] || 0; return s; };
+const statusOf = (total, limit) => (total > limit ? 'over' : total >= limit * 0.85 ? 'near' : 'ok');
+function availableOn(d, day = idx.day) { // hours left in the calendar week (starting on the chosen first weekday) that contains d
+  const ws = weekStartOf(d);
+  return Math.max(0, weekLimitMin(ws) - sumRange(day, ws, 7));
+}
+function weekStats(ws) {
+  const t = todayStr(); let total = 0, done = 0;
+  for (let i = 0; i < 7; i++) { const d = addDays(ws, i), v = idx.day[d] || 0; total += v; if (d < t) done += v; }
+  const limit = weekLimitMin(ws);
+  return { ws, we: addDays(ws, 6), total, done, plan: total - done, limit, status: statusOf(total, limit) };
+}
+function weekShifts(ws) { const out = []; for (let i = 0; i < 7; i++) out.push(...(idx.byDate[addDays(ws, i)] || [])); return out; }
+function overIds(ws) { // shifts that push the running weekly total past the limit get printed in red
+  const lim = weekLimitMin(ws), set = new Set(); let run = 0;
+  for (const s of weekShifts(ws)) { run += shiftMin(s); if (run > lim) set.add(s.id); }
+  return set;
+}
+const isVacWeek = (ws) => { for (let i = 0; i < 7; i++) if (isVac(addDays(ws, i))) return true; return false; };
+
+function monthStats(ym) {
+  const t = todayStr(), n = daysInMonth(ym), first = `${ym}-01`, last = `${ym}-${pad(n)}`;
+  let total = 0, done = 0, cap = 0, daysLeft = 0;
+  for (let i = 0; i < n; i++) {
+    const d = addDays(first, i), v = idx.day[d] || 0;
+    total += v; if (d < t) done += v; else daysLeft++;
+    cap += perDayMin(d);
+  }
+  const weeks = [];
+  for (let ws = weekStartOf(first); ws <= last; ws = addDays(ws, 7)) weeks.push(weekStats(ws));
+  return { ym, n, first, last, total, done, plan: total - done, cap, daysLeft, weeks, status: statusOf(total, cap) };
+}
+
+/* ---------- Japanese public holidays (祝日), computed per year ---------- */
+const HOLIDAYS = {};
+function jpHolidays(y) {
+  const H = {};
+  const add = (m, d, name) => { H[`${y}-${pad(m)}-${pad(d)}`] = name; };
+  const nthMonday = (m, n) => 1 + ((8 - new Date(y, m - 1, 1).getDay()) % 7) + (n - 1) * 7;
+  const equinox = (base) => Math.floor(base + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4));
+  add(1, 1, '元日'); add(1, nthMonday(1, 2), '成人の日'); add(2, 11, '建国記念の日'); add(2, 23, '天皇誕生日');
+  add(3, equinox(20.8431), '春分の日'); add(4, 29, '昭和の日'); add(5, 3, '憲法記念日'); add(5, 4, 'みどりの日'); add(5, 5, 'こどもの日');
+  add(7, nthMonday(7, 3), '海の日'); add(8, 11, '山の日'); add(9, nthMonday(9, 3), '敬老の日'); add(9, equinox(23.2488), '秋分の日');
+  add(10, nthMonday(10, 2), 'スポーツの日'); add(11, 3, '文化の日'); add(11, 23, '勤労感謝の日');
+  for (const k of Object.keys(H)) { const mid = addDays(k, 1); if (H[addDays(k, 2)] && !H[mid]) H[mid] = '国民の休日'; }
+  for (const k of Object.keys(H).sort()) if (dowOf(k) === 0) { let d = addDays(k, 1); while (H[d]) d = addDays(d, 1); H[d] = '振替休日'; }
+  return H;
+}
+const holidayName = (d) => { const y = Number(d.slice(0, 4)); return (HOLIDAYS[y] || (HOLIDAYS[y] = jpHolidays(y)))[d] || ''; };
+
+/* ---------- pay: wage by day type, night premium, transport ---------- */
+const DAY_KIND = { wd: 'Ngày thường', wkd: 'T7, CN', hol: 'Ngày lễ 祝日' };
+const dayKind = (d) => (holidayName(d) ? 'hol' : dowOf(d) === 0 || dowOf(d) === 6 ? 'wkd' : 'wd');
+function wageOf(shop, kind) { // empty weekend wage = weekday wage; empty holiday wage = weekend wage
+  const wd = Number(shop.wage) || 0, wkd = Number(shop.wageWeekend) || wd, hol = Number(shop.wageHoliday) || wkd;
+  return kind === 'hol' ? hol : kind === 'wkd' ? wkd : wd;
+}
+const nightPctOf = (shop) => (shop.nightPct === undefined || shop.nightPct === null || shop.nightPct === '' ? 25 : Number(shop.nightPct) || 0);
+function nightMinOf(s) { // minutes between 22:00 and 05:00, counted from the shift's start day
+  const a = toMin(s.start), b = a + grossMin(s);
+  let n = 0;
+  for (const [x, y] of [[0, 300], [1320, 1740], [2760, 3180]]) n += Math.max(0, Math.min(b, y) - Math.max(a, x));
+  return n;
+}
+function shiftPay(s, shop = shopById(s.shopId) || {}) {
+  const kind = dayKind(s.date), wage = wageOf(shop, kind), net = shiftMin(s), gross = grossMin(s);
+  const night = gross ? Math.round((nightMinOf(s) * net) / gross) : 0; // the break is taken out of day and night time proportionally
+  const base = (net / 60) * wage, nightYen = ((night / 60) * wage * nightPctOf(shop)) / 100;
+  return { kind, wage, net, night, base, nightYen, total: base + nightYen };
+}
+function payOf(list) { // per shop: hours by day type, night premium, transport once per working day
+  const by = {};
+  for (const s of list) {
+    const shop = shopById(s.shopId) || {}, p = shiftPay(s, shop);
+    const b = by[s.shopId] || (by[s.shopId] = { min: 0, kinds: {}, nightMin: 0, nightYen: 0, days: new Set(), transport: 0, total: 0 });
+    const k = b.kinds[p.kind] || (b.kinds[p.kind] = { min: 0, yen: 0, wage: p.wage });
+    k.min += p.net; k.yen += p.base; b.min += p.net;
+    b.nightMin += p.night; b.nightYen += p.nightYen; b.days.add(s.date);
+  }
+  for (const id in by) {
+    const b = by[id], shop = shopById(id) || {};
+    b.transport = b.days.size * (Number(shop.transport) || 0);
+    b.total = Object.values(b.kinds).reduce((a, k) => a + k.yen, 0) + b.nightYen + b.transport;
+  }
+  return by;
+}
+const payTotal = (list) => Object.values(payOf(list)).reduce((a, b) => a + b.total, 0);
+function payPeriod(shop, ym) { // the pay period that closes (締め) in month ym
+  const cd = Number(shop.closeDay) || 0;
+  if (!cd) return { start: `${ym}-01`, end: `${ym}-${pad(daysInMonth(ym))}` };
+  return { start: addDays(`${addMonths(ym, -1)}-${pad(cd)}`, 1), end: `${ym}-${pad(cd)}` };
+}
+function payDate(shop, ym) {
+  const d = Number(shop.payDay) || 0;
+  if (!d) return '';
+  const m = addMonths(ym, shop.payMonth === 0 ? 0 : 1);
+  return `${m}-${pad(Math.min(d, daysInMonth(m)))}`;
+}
+const closeText = (shop) => (Number(shop.closeDay) ? `chốt ngày ${shop.closeDay}` : 'chốt cuối tháng');
+const payText = (shop) => (Number(shop.payDay) ? `nhận ngày ${shop.payDay} ${shop.payMonth === 0 ? 'cùng tháng' : 'tháng sau'}` : '');
+function monthPay(ym) {
+  const t = todayStr(), all = allShifts(), rows = [];
+  let total = 0, done = 0;
+  for (const shop of shops()) {
+    const per = payPeriod(shop, ym);
+    const list = all.filter((s) => s.shopId === shop.id && s.date >= per.start && s.date <= per.end);
+    if (!list.length) continue;
+    const b = payOf(list)[shop.id], d = payTotal(list.filter((s) => s.date < t));
+    total += b.total; done += d;
+    rows.push({ shop, per, b, pd: payDate(shop, ym), noWage: !(Number(shop.wage) || Number(shop.wageWeekend) || Number(shop.wageHoliday)) });
+  }
+  return { total, done, rows };
+}
+
+/* ---------- render ---------- */
+const initial = (n) => (String(n || '').trim()[0] || '?').toUpperCase();
+const avatar = (shop, cls = '') => `<span class="avatar ${cls}" style="--c:${(shop && shop.color) || '#8E8E93'}">${esc(initial(shop && shop.name))}</span>`;
+const circ = (act, icon, label, cls = '') => `<button class="circle ${cls}" data-act="${act}" aria-label="${label}">${icon}</button>`;
+const tile = (icon, value, label, cls = '') => `<div class="tile ${cls}"><span class="tile-ico">${icon}</span><b>${value}</b><small>${label}</small></div>`;
+const seg = (act, items, cur, cls = '') => `<div class="seg ${cls}" role="tablist">${items.map(([v, label]) => `<button role="tab" aria-selected="${v === cur}" class="${v === cur ? 'on' : ''}" data-act="${act}" data-v="${v}">${label}</button>`).join('')}</div>`;
+const statusIcon = (s) => (s === 'ok' ? I.ok : I.warn);
+const currentWeekOver = () => weekStats(weekStartOf(todayStr())).status === 'over';
+function render() {
+  _st = null;
+  idx = buildIndex(allShifts());
+  if (!ui.ws) ui.ws = weekStartOf(todayStr());
+  if (!ui.ym) ui.ym = todayStr().slice(0, 7);
+  $('#view').innerHTML = ui.tab === 'week' ? viewWeek() : ui.tab === 'month' ? viewMonth() : ui.tab === 'shops' ? viewShops() : viewSettings();
+  for (const t of TABS) { const b = $('#tab-' + t); b.classList.toggle('on', ui.tab === t); b.setAttribute('aria-current', ui.tab === t ? 'page' : 'false'); }
+  $('#tab-week').classList.toggle('badged', currentWeekOver());
+}
+
+function greeting() { const h = new Date().getHours(); return h < 11 ? 'Chào buổi sáng' : h < 13 ? 'Chào buổi trưa' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối'; }
+function alertBox(title, body, extra = '', note = false) {
+  return `<section class="alert ${note ? 'note' : ''}" ${note ? '' : 'role="alert"'}><span class="alert-ico">${note ? I.sparkle : I.warn}</span><div><h3>${title}</h3>${body}${extra}</div></section>`;
+}
+const hasSample = () => shops().some((s) => s.sample) || allShifts().some((s) => s.sample);
+function sampleBanner() {
+  return hasSample() ? alertBox('Đang xem dữ liệu mẫu', '<p class="muted">Quán và ca có nhãn “Mẫu” chỉ để bạn thử. Xoá đi rồi nhập lịch thật của bạn.</p>', '<button class="cta sm light" data-act="sample-clear" style="margin-top:12px">Xoá dữ liệu mẫu</button>', true) : '';
+}
+
+/* the hero illustration: Mt Fuji whose sky goes from clear day (ok) to golden hour (near) to red sunset (over) */
+const heroArt = () => `<svg class="art" viewBox="0 0 390 390" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs>
+  <linearGradient id="hs-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky-1)"/><stop offset=".55" style="stop-color:var(--sky-2)"/><stop offset="1" style="stop-color:var(--sky-3)"/></linearGradient>
+  <linearGradient id="hs-mt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--mt-1)"/><stop offset="1" style="stop-color:var(--mt-2)"/></linearGradient>
+  <linearGradient id="hs-lit" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".18"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
+  <linearGradient id="hs-fade" x1="0" y1="0" x2="0" y2="1"><stop offset=".22" stop-color="#000000" stop-opacity="0"/><stop offset=".6" stop-color="#000000" stop-opacity=".36"/><stop offset="1" stop-color="#000000" stop-opacity=".72"/></linearGradient></defs>
+  <rect width="390" height="390" fill="url(#hs-sky)"/>
+  <circle cx="296" cy="92" r="30" style="fill:var(--sun)" opacity=".85"/>
+  <path d="M-20 300 Q 120 262 186 112 L 214 112 Q 280 262 420 300 Z" fill="url(#hs-mt)"/>
+  <path d="M-20 300 Q 120 262 186 112 L 196 112 Q 150 236 128 300 Z" fill="url(#hs-lit)"/>
+  <path d="M186 112 L214 112 Q 222 128 232 150 L 223 145 L 215 156 L 207 144 L 199 158 L 191 145 L 181 154 L 168 150 Q 178 128 186 112 Z" style="fill:var(--snow)"/>
+  <path d="M-20 288 C 60 266 120 270 180 286 C 240 302 300 280 420 270 L 420 390 L -20 390 Z" style="fill:var(--hill-1)"/>
+  <path d="M-20 326 C 80 304 160 312 230 326 C 300 340 350 320 420 314 L 420 390 L -20 390 Z" style="fill:var(--hill-2)"/>
+  <rect width="390" height="390" fill="url(#hs-fade)"/></svg>`;
+function weekHero(w, rel) {
+  const scale = Math.max(w.total, w.limit) || 1;
+  const badge = { ok: 'An toàn', near: 'Sắp chạm giới hạn', over: 'Vượt giới hạn' }[w.status];
+  const rest = w.status === 'over' ? `vượt ${fmtH(w.total - w.limit)}` : `còn ${fmtH(w.limit - w.total)} trước khi chạm ${fmtH(w.limit)}`;
+  return `<section class="hero ${w.status}">${heroArt()}<div class="hero-in">
+    <div class="hero-top"><span class="glass glass-chip">${rel} · ${fmtDM(w.ws)} – ${fmtDM(w.we)}</span><span class="glass glass-circle">${statusIcon(w.status)}</span></div>
+    <div class="hero-bottom"><small>Tổng giờ làm trong tuần</small>
+      <div class="hero-num"><b>${fmtH(w.total)}</b><span>/ ${fmtH(w.limit)}</span></div>
+      <div class="hero-meta"><span class="o-chip">${statusIcon(w.status)}${badge}</span><span>${rest}</span></div>
+      <div class="thin" role="img" aria-label="${fmtH(w.total)} trên ${fmtH(w.limit)}"><i style="width:${(Math.min(w.total, w.limit) / scale) * 100}%"></i>${w.total > w.limit ? `<u style="width:${((w.total - w.limit) / scale) * 100}%"></u>` : ''}</div>
+      <button class="cta-glass glass press" data-act="go-month" data-ym="${w.ws.slice(0, 7)}"><span>Xem cả tháng</span><span class="cta-dot">${I.arrow}</span></button></div></div></section>`;
+}
+function weekStrip(ws) {
+  const t = todayStr(), os = overIds(ws), list = weekShifts(ws);
+  return `<div class="days">${[...Array(7)].map((_, i) => {
+    const d = addDays(ws, i), tot = idx.day[d] || 0, hol = holidayName(d), over = list.some((s) => s.date === d && os.has(s.id));
+    return `<button class="day ${d === t ? 'today' : ''} ${tot ? 'has' : ''} ${over ? 'over' : ''} ${hol ? 'hol' : ''}" data-act="day" data-date="${d}" aria-label="${DOW_LONG[dowOf(d)]} ${fmtDM(d)}${hol ? ' ' + hol : ''}: ${fmtH(tot)}">
+      <small>${hol ? 'Lễ' : DOW[dowOf(d)]}</small><b>${Number(d.slice(8))}</b><em>${tot ? fmtH(tot) : '·'}</em></button>`;
+  }).join('')}</div>`;
+}
+function shiftCard(s, os) {
+  const t = todayStr(), over = !!(os && os.has(s.id)), shop = shopById(s.shopId), p = shiftPay(s, shop || {});
+  const state = [s.date > t ? 'Dự kiến' : s.date === t ? 'Hôm nay' : 'Đã làm'];
+  if (holidayName(s.date)) state.push('Ngày lễ');
+  if (p.night) state.push(`đêm ${fmtH(p.night)}`);
+  const tags = (over ? '<span class="tag red">Vượt giới hạn</span>' : '') + (s.sample ? '<span class="tag">Mẫu</span>' : '');
+  return `<div class="swipe"><button class="swipe-del" data-act="swipe-del" data-id="${esc(s.id)}" aria-label="Xoá ca">${I.trash}<span>Xoá</span></button>
+    <button class="shift ${over ? 'over' : ''}" data-act="edit" data-id="${esc(s.id)}">
+      <span class="thumb"><b>${s.date.slice(8)}</b><small>${DOW[dowOf(s.date)]}</small></span>
+      <span class="shift-main"><small>${state.join(' · ')}</small>
+        <span class="shift-shop"><i class="dot" style="background:${(shop && shop.color) || '#8E8E93'}"></i><span>${esc(shopName(s.shopId))}</span></span>
+        <span class="shift-time">${esc(s.start)} – ${esc(s.end)}${isOvernight(s) ? ' (+1)' : ''}${Number(s.breakMin) ? ` · nghỉ ${Number(s.breakMin)}′` : ''}${p.total ? ` · ${yen(p.total)}` : ''}</span>
+        ${tags ? `<span style="margin-top:4px">${tags}</span>` : ''}</span>
+      <span class="shift-dur">${fmtH(shiftMin(s))}</span></button></div>`;
+}
+function untilText(min) {
+  if (min >= 2880) return `${Math.floor(min / 1440)} ngày`;
+  const h = Math.floor(min / 60), m = min % 60;
+  return h ? `${h} giờ${m ? ` ${m} phút` : ''}` : `${m} phút`;
+}
+function nextShift() { // the shift in progress, or the next one to start
+  const now = new Date(), t = todayStr(), nowMin = now.getHours() * 60 + now.getMinutes();
+  const list = allShifts().filter((s) => s.date >= addDays(t, -1)).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+  for (const s of list) {
+    const start = daysBetween(t, s.date) * 1440 + toMin(s.start), end = start + grossMin(s);
+    if (end > nowMin) return { s, start, end, nowMin, live: start <= nowMin };
+  }
+  return null;
+}
+function nextCard() {
+  const n = nextShift();
+  if (!n) return '';
+  const { s } = n, shop = shopById(s.shopId) || {}, p = shiftPay(s, shop);
+  const firstOfDay = !allShifts().some((x) => x.id !== s.id && x.shopId === s.shopId && x.date === s.date && x.start < s.start);
+  const money = p.total ? p.total + (firstOfDay ? Number(shop.transport) || 0 : 0) : 0;
+  const chips = [];
+  if (money) chips.push(`${I.yen}${yen(money)}`);
+  if (Number(s.breakMin)) chips.push(`${I.hourglass}Nghỉ ${Number(s.breakMin)}′`);
+  if (p.night) chips.push(`${I.moon}Đêm ${fmtH(p.night)}`);
+  if (holidayName(s.date)) chips.push(`${I.cal}${esc(holidayName(s.date))}`);
+  return `<div class="sec"><h2>Ca tiếp theo</h2><span class="muted" style="font-size:14px">${n.live ? `đang làm · còn ${untilText(n.end - n.nowMin)}` : `bắt đầu sau ${untilText(n.start - n.nowMin)}`}</span></div>
+    <button class="next press" data-act="edit" data-id="${esc(s.id)}">
+      <span class="next-top"><span class="thumb"><b>${Number(s.date.slice(8))}</b><small>${DOW[dowOf(s.date)]}</small></span>
+        <span class="next-main"><small>${DOW_LONG[dowOf(s.date)]}, ${fmtDM(s.date)}</small><b>${esc(shopName(s.shopId))}</b><span>${esc(s.start)} – ${esc(s.end)} · ${fmtH(shiftMin(s))} làm việc</span></span></span>
+      <span class="next-foot"><span class="chips-s">${chips.map((c) => `<span class="chip-s">${c}</span>`).join('')}</span><span class="go">${I.arrow}</span></span></button>`;
+}
+
+function viewWeek() {
+  const st = settings(), t = todayStr(), cur = weekStartOf(t), ws = ui.ws, w = weekStats(ws);
+  const diff = Math.round(daysBetween(cur, ws) / 7);
+  const rel = diff === 0 ? 'Tuần này' : diff === 1 ? 'Tuần sau' : diff === -1 ? 'Tuần trước' : diff > 0 ? `${diff} tuần tới` : `${-diff} tuần trước`;
+  let html = `<main class="wrap stack">
+    <header class="head"><div><h1>${greeting()}</h1><p>Tuần này còn làm được <b style="color:var(--ink);font-weight:600">${fmtH(availableOn(t))}</b></p></div>${circ('wk-today', I.today, 'Về tuần này')}</header>
+    <div class="bar"><div class="switcher"><button class="arrow" data-act="wk-prev" aria-label="Tuần trước">${I.prev}</button>
+      <div class="lbl-c"><b>${rel}${isVacWeek(ws) ? ' · kỳ nghỉ' : ''}</b><small>${fmtDM(ws)} – ${fmtDM(w.we)}</small></div>
+      <button class="arrow" data-act="wk-next" aria-label="Tuần sau">${I.next}</button></div>${circ('add', I.plus, 'Thêm ca', 'dark')}</div>
+    ${weekStrip(ws)}${weekHero(w, rel)}`;
+
+  if (w.status === 'over') {
+    const over = w.total - w.limit, nws = addDays(ws, 7), nw = weekStats(nws);
+    const futureMin = weekShifts(ws).filter((s) => s.date > t).reduce((a, s) => a + shiftMin(s), 0);
+    const tips = [];
+    if (futureMin > 0) tips.push(`Tuần này còn ${fmtH(futureMin)} ca chưa làm. Bớt ít nhất ${fmtH(over)} để về dưới giới hạn.`);
+    tips.push(`Tuần sau (${fmtDM(nws)} – ${fmtDM(addDays(nws, 6))}) đang xếp ${fmtH(nw.total)} / ${fmtH(nw.limit)}.`);
+    html += alertBox(`Vượt ${fmtH(over)} so với giới hạn ${fmtH(w.limit)}/tuần`,
+      `<p>Các ca có nhãn “Vượt giới hạn” là phần làm vượt. Hãy rút lại lịch và báo quản lý điều chỉnh ca.</p><ul>${tips.map((x) => `<li>${x}</li>`).join('')}</ul>`,
+      `<button class="cta sm red" data-act="wk-next">Xem lịch tuần sau ${I.next}</button>`);
+  }
+  html += sampleBanner();
+  if (!allShifts().length && !shops().length) {
+    html += `<section class="card"><div class="card-h"><h2>Bắt đầu ghi giờ làm</h2></div>
+      <ol style="margin:0 0 16px;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:15px">
+        <li>Lưu quán ở tab Quán: tên, 時給 và các ca hay làm.</li>
+        <li>Thêm ca: chọn quán, chạm vào ca, chọn ngày là xong.</li>
+        <li>App cộng giờ, tính lương và báo đỏ khi tuần vượt ${fmtH(st.weekLimit * 60)}.</li></ol>
+      <div class="chips"><button class="cta dark" data-act="shop-new">${I.plus}Thêm quán đầu tiên</button><button class="cta light" data-act="sample-load">Xem dữ liệu mẫu</button></div></section>`;
+  }
+  if (diff === 0) html += nextCard();
+
+  const list = weekShifts(ws), os = overIds(ws), pay = payTotal(list);
+  const left = Math.max(0, w.limit - w.total);
+  html += `<div class="tiles">${tile(I.target, fmtH(left), 'Còn lại trong tuần', left ? '' : 'bad')}${tile(I.list, list.length, 'Ca trong tuần')}${tile(I.yen, pay ? yen(pay) : '—', 'Lương ước tính')}</div>`;
+  html += `<div class="sec"><h2>Ca trong tuần <span>${list.length}</span></h2>${list.length ? '<span class="muted" style="font-size:13.5px">vuốt trái để xoá</span>' : ''}</div>`;
+  html += list.length ? `<div class="stack-s">${list.map((s) => shiftCard(s, os)).join('')}</div>`
+    : `<div class="empty-line"><span>Chưa có ca nào trong tuần này.</span><button class="cta sm dark" data-act="add">${I.plus}Thêm ca</button></div>`;
+  const by = payOf(list), ids = Object.keys(by).sort((a, b) => by[b].min - by[a].min);
+  if (ids.length > 1) {
+    html += `<div class="sec"><h2>Theo quán</h2></div><section class="list">${ids.map((k) => `<div class="li">${avatar(shopById(k), 'sm')}
+      <span class="li-main"><b>${esc(shopName(k))}</b></span><span class="li-end"><b style="color:var(--ink);font-weight:600">${fmtH(by[k].min)}</b>${by[k].total ? `· ${yen(by[k].total)}` : ''}</span></div>`).join('')}</section>`;
+  }
+  return html + '</main>';
+}
+
+function viewMonth() {
+  const st = settings(), t = todayStr(), ym = ui.ym, m = monthStats(ym), mode = ui.mseg === 'pay' ? 'pay' : 'hours';
+  const diff = (Number(ym.slice(0, 4)) - Number(t.slice(0, 4))) * 12 + Number(ym.slice(5)) - Number(t.slice(5, 7));
+  const rel = diff === 0 ? 'Tháng này' : diff === 1 ? 'Tháng sau' : diff === -1 ? 'Tháng trước' : diff > 0 ? `${diff} tháng tới` : `${-diff} tháng trước`;
+  let html = `<main class="wrap stack">
+    <header class="head-c">${circ('mo-prev', I.prev, 'Tháng trước')}<div class="title"><b>Tháng ${Number(ym.slice(5))}, ${ym.slice(0, 4)}</b><small>${rel} · ${fmtDM(m.first)} – ${fmtDM(m.last)}</small></div>${circ('mo-next', I.next, 'Tháng sau')}</header>
+    <div class="pills" role="tablist">${[['hours', 'Tổng quan'], ['pay', 'Lương']].map(([v, l]) => `<button class="pill ${mode === v ? 'on' : ''}" role="tab" aria-selected="${mode === v}" data-act="mseg" data-v="${v}">${l}</button>`).join('')}</div>`;
+  if (diff !== 0) html += '<div style="display:flex;justify-content:flex-end"><button class="ulink" data-act="mo-today">Về tháng này</button></div>';
+
+  if (mode === 'pay') {
+    const pay = monthPay(ym);
+    if (!pay.rows.length) return html + `<div class="empty-line"><span>Chưa có ca nào trong kỳ lương chốt tháng ${Number(ym.slice(5))}.</span><button class="cta sm dark" data-act="add">${I.plus}Thêm ca</button></div></main>`;
+    const days = [...new Set(pay.rows.filter((r) => r.pd && !r.noWage).map((r) => r.pd))].sort();
+    html += `<section class="pay-hero"><span class="k">Lương dự tính · kỳ chốt tháng ${Number(ym.slice(5))}</span>
+      <b class="pay-big">${pay.total ? yen(pay.total) : '—'}</b><span class="s">Đã làm ${yen(pay.done)} · trước thuế, gồm cả ca đã xếp lịch</span>
+      ${days.length ? `<div class="pay-dates">${days.map((d) => `<span>Nhận ${fmtDM(d)} · ${yen(pay.rows.filter((r) => r.pd === d).reduce((a, r) => a + r.b.total, 0))}</span>`).join('')}</div>` : ''}</section>
+      <div class="sec"><h2>Theo quán <span>${pay.rows.length}</span></h2></div>`;
+    const open = ui.payOpen === undefined ? pay.rows[0].shop.id : ui.payOpen;
+    for (const r of pay.rows) {
+      const { shop, b } = r, isOpen = open === shop.id;
+      const rows = [`<div><p class="k">Kỳ lương</p><div class="acc-row"><span>${fmtDM(r.per.start)} – ${fmtDM(r.per.end)}</span><b>${fmtH(b.min)}</b></div></div>`];
+      rows.push(...['wd', 'wkd', 'hol'].filter((k) => b.kinds[k]).map((k) => `<div><p class="k">${DAY_KIND[k]}</p><div class="acc-row"><span>${fmtH(b.kinds[k].min)} × ${yen(b.kinds[k].wage)}</span><b>${yen(b.kinds[k].yen)}</b></div></div>`));
+      if (b.nightMin) rows.push(`<div><p class="k">Phụ cấp đêm +${nightPctOf(shop)}% · 22:00–5:00</p><div class="acc-row"><span>${fmtH(b.nightMin)}</span><b>${yen(b.nightYen)}</b></div></div>`);
+      if (Number(shop.transport)) rows.push(`<div><p class="k">Tiền tàu 交通費</p><div class="acc-row"><span>${b.days.size} ngày × ${yen(shop.transport)}</span><b>${yen(b.transport)}</b></div></div>`);
+      html += `<section class="acc ${isOpen ? 'open' : ''}"><button class="acc-head" data-act="pay-toggle" data-id="${esc(shop.id)}" aria-expanded="${isOpen}">${avatar(shop, 'lg')}
+        <span class="acc-main"><small>${r.pd ? `Nhận ngày ${fmtDM(r.pd)}` : `Kỳ ${fmtDM(r.per.start)} – ${fmtDM(r.per.end)}`}</small><b>${esc(shop.name)}</b></span>
+        <span class="acc-amt">${r.noWage ? '—' : yen(b.total)}</span><span class="acc-chev">${I.down}</span></button>
+        ${isOpen ? `<div class="acc-body">${r.noWage ? `<p class="muted">Chưa nhập 時給. <button class="link-btn" data-act="shop-edit" data-id="${esc(shop.id)}">Nhập lương cho quán này</button></p>` : rows.join('')}</div>` : ''}</section>`;
+    }
+    return html + '<p class="list-f">Ngày lễ Nhật (祝日) được nhận tự động. Ca qua đêm tính theo ngày bắt đầu ca. Chưa trừ thuế thu nhập và bảo hiểm.</p></main>';
+  }
+
+  { // overview: the work calendar comes first
+    const lastWs = weekStartOf(m.last);
+    let cal = '';
+    for (let i = 0; i < 7; i++) cal += `<span class="cal-h">${DOW[(st.weekStart + i) % 7]}</span>`;
+    cal += '<span class="cal-h">Tuần</span>';
+    for (let ws = weekStartOf(m.first); ws <= lastWs; ws = addDays(ws, 7)) {
+      const w = weekStats(ws);
+      for (let i = 0; i < 7; i++) {
+        const d = addDays(ws, i), v = idx.day[d] || 0, k = v ? clamp(v / Math.max(60, perDayMin(d) * 1.5), 0.15, 1) : 0, hol = holidayName(d);
+        cal += `<button class="cell ${d.slice(0, 7) !== ym ? 'out' : ''} ${d === t ? 'today' : ''} ${w.status === 'over' ? 'wk-over' : ''} ${hol ? 'hol' : ''} ${k >= 0.55 ? 'dk' : ''}" style="--k:${k.toFixed(2)}" data-act="day" data-date="${d}" aria-label="${fmtDM(d)}${hol ? ' ' + hol : ''}: ${fmtH(v)}">
+          <span class="d">${Number(d.slice(8))}</span><span class="h">${v ? fmtH(v) : ''}</span></button>`;
+      }
+      cal += `<button class="sum ${w.status}" data-act="goto-week" data-ws="${ws}" aria-label="Tuần ${fmtDM(ws)}: ${fmtH(w.total)}">${fmtH(w.total)}<small>/${fmtH(w.limit)}</small></button>`;
+    }
+    html += `<section class="card"><div class="card-h"><h2>Lịch làm</h2><small>chạm ngày để xem ca</small></div><div class="cal">${cal}</div>
+      <p class="list-f" style="padding:12px 2px 0">Ô càng đậm là ngày làm càng nhiều giờ. Gạch đỏ: tuần vượt giới hạn, số đỏ: ngày lễ. Chạm cột Tuần để mở tuần đó.</p></section>`;
+  }
+
+  const overWeeks = m.weeks.filter((w) => w.status === 'over'), left = m.cap - m.total, scale = Math.max(m.total, m.cap) || 1;
+  const label = { ok: 'Trong dự trù', near: 'Gần chạm dự trù', over: 'Vượt dự trù' }[m.status];
+  html += `<section class="card sum-card"><div class="sum-top"><span>Tổng giờ trong tháng</span><span class="badge ${m.status}">${statusIcon(m.status)}${label}</span></div>
+    <div class="big"><b>${fmtH(m.total)}</b><span>/ ${fmtH(m.cap)}</span></div>
+    <div class="meter ${m.status}"><i style="width:${(Math.min(m.total, m.cap) / scale) * 100}%"></i>${m.total > m.cap ? `<u style="width:${((m.total - m.cap) / scale) * 100}%"></u>` : ''}</div>
+    <div class="foot">Đã làm ${fmtH(m.done)} · đã xếp lịch ${fmtH(m.plan)}</div></section>`;
+  if (overWeeks.length) {
+    html += alertBox(`${overWeeks.length} tuần vượt giới hạn`, `<ul>${overWeeks.map((w) => `<li>${fmtDM(w.ws)} – ${fmtDM(w.we)}: <b>${fmtH(w.total)}</b> / ${fmtH(w.limit)} (vượt ${fmtH(w.total - w.limit)})</li>`).join('')}</ul>`,
+      `<button class="cta sm red" data-act="goto-week" data-ws="${overWeeks[overWeeks.length - 1].ws}">Mở tuần vượt ${I.next}</button>`);
+  }
+  html += sampleBanner();
+  const uniform = Math.abs(m.cap - (st.weekLimit * 60 * m.n) / 7) < 1;
+  html += `<div class="tiles two">
+    ${tile(I.target, fmtH(m.cap), uniform ? `Tối đa dự trù · ${fmtH(st.weekLimit * 60)}/tuần × ${m.n} ngày ÷ 7` : `Tối đa dự trù · ${m.n} ngày, có kỳ nghỉ`)}
+    ${tile(I.hourglass, fmtH(Math.abs(left)), left >= 0 ? (m.daysLeft ? `Còn có thể xếp trong ${m.daysLeft} ngày` : 'Còn dư, tháng đã qua') : 'Vượt dự trù', left >= 0 ? 'good' : 'bad')}
+    ${tile(I.bolt, m.daysLeft && left > 0 ? fmtH(left / m.daysLeft) : '0h', 'Trung bình mỗi ngày còn lại')}
+    ${tile(I.list, allShifts().filter((s) => s.date.startsWith(ym)).length, 'Ca trong tháng')}</div>`;
+  return html + '</main>';
+}
+
+function presetPay(p, shop) { // weekday estimate for a saved shift, shown as "từ ¥…"
+  return shiftPay({ date: '2026-01-07', start: p.start, end: p.end, breakMin: p.breakMin }, { ...shop, wageWeekend: 0, wageHoliday: 0 }).total;
+}
+function viewShops() {
+  const list = shops(), all = allShifts(), ym = todayStr().slice(0, 7);
+  let html = `<main class="wrap stack"><header class="head"><div><h1>Quán làm</h1><p>${list.length ? `${list.length} quán · chạm một ca để ghi nhanh` : 'Lưu quán một lần, lần sau chỉ cần chọn'}</p></div>${circ('shop-new', I.plus, 'Thêm quán', 'dark')}</header>`;
+  if (!list.length) {
+    html += `<section class="card"><div class="card-h"><h2>Chưa có quán nào</h2></div>
+      <p class="muted" style="margin-bottom:16px">Lưu tên quán, 時給 và giờ của các ca hay làm. Khi thêm ca bạn chỉ cần chọn quán và chạm vào ca, không phải gõ lại.</p>
+      <button class="cta dark" data-act="shop-new">${I.plus}Thêm quán đầu tiên</button></section>`;
+  }
+  html += sampleBanner();
+  for (const s of list) {
+    const mine = all.filter((x) => x.shopId === s.id), month = mine.filter((x) => x.date.startsWith(ym));
+    const monthMin = month.reduce((a, x) => a + shiftMin(x), 0), monthYen = payTotal(month), ps = presetsOf(s.id), hasWage = Number(s.wage) > 0;
+    const info = [];
+    if (s.phone) info.push(`<p>${I.phone}<span>${esc(s.phone)}</span></p>`);
+    if (s.note) info.push(`<p>${I.note}<span>${esc(s.note)}</span></p>`);
+    if (hasWage) info.push(`<p>${I.cal}<span>${[closeText(s), payText(s)].filter(Boolean).join(' · ').replace(/^c/, 'C')}</span></p>`);
+    html += `<section class="shop">
+      <div class="shop-head">${avatar(s, 'lg')}<span class="shop-name"><b>${esc(s.name)}</b>${s.address ? `<small>${I.pin}<span>${esc(s.address)}</span></small>` : `<small><span>${mine.length} ca đã ghi</span></small>`}</span>${hasWage ? `<span class="rate">${yen(s.wage)}/giờ</span>` : ''}</div>
+      <div class="shop-links"><button class="ulink" data-act="shop-edit" data-id="${esc(s.id)}">Sửa thông tin</button><span>Tháng này ${fmtH(monthMin)}${monthYen ? ` · ${yen(monthYen)}` : ''}</span></div>
+      ${hasWage ? `<div class="facts">
+        <div class="fact"><small>時給 T7, CN</small><b>${yen(wageOf(s, 'wkd'))}</b></div>
+        <div class="fact"><small>時給 ngày lễ</small><b>${yen(wageOf(s, 'hol'))}</b></div>
+        <div class="fact"><small>Phụ cấp đêm 22–5h</small><b>+${nightPctOf(s)}%</b></div>
+        <div class="fact"><small>Tiền tàu mỗi ngày</small><b>${Number(s.transport) ? yen(s.transport) : '—'}</b></div></div>`
+        : `<p class="list-f" style="padding:0">Chưa nhập 時給. <button class="link-btn" data-act="shop-edit" data-id="${esc(s.id)}">Nhập lương</button> để app tính tiền cho bạn.</p>`}
+      ${info.length ? `<div class="info">${info.join('')}</div>` : ''}
+      <div class="sec" style="margin-top:0"><h2 style="font-size:18px">Ca thường làm</h2><button class="ulink" data-act="add" data-shop="${esc(s.id)}">Ca khác</button></div>
+      ${ps.length ? `<div class="presets">${ps.map((p) => { const pay = hasWage ? presetPay(p, s) : 0; return `<button class="pcard press" data-act="add" data-shop="${esc(s.id)}" data-preset="${esc(p.id)}" aria-label="Ghi ca ${esc(p.name || p.start)}">
+          <b>${esc(p.name || 'Ca làm')}</b><span class="pt">${esc(p.start)} – ${esc(p.end)}</span><small>${fmtH(shiftMin(p))}${pay ? ` · từ ${yen(pay)}` : ''}</small><span class="go">${I.plus}</span></button>`; }).join('')}</div>`
+        : `<p class="list-f" style="padding:0">Chưa lưu ca thường làm. <button class="link-btn" data-act="shop-edit" data-id="${esc(s.id)}">Thêm ngay</button></p>`}
+    </section>`;
+  }
+  return html + '</main>';
+}
+
+function viewSettings() {
+  const st = settings(), list = shops(), all = allShifts();
+  const ico = (icon, cls = '') => `<span class="li-ico ${cls}">${icon}</span>`;
+  return `<main class="wrap stack"><header class="head"><div><h1>Cài đặt</h1><p>Giới hạn giờ làm, kỳ nghỉ và dữ liệu</p></div></header>
+  <p class="list-h">Giới hạn giờ làm · kỳ học</p>
+  <section class="list">
+    <label class="li" for="set-week">${ico(I.clock)}<span class="li-main"><b>Tối đa mỗi tuần</b><small>Visa du học: 28 giờ</small></span>
+      <span class="li-end"><input id="set-week" class="in-pill" type="number" inputmode="decimal" min="1" max="80" step="0.5" value="${st.weekLimit}">giờ</span></label>
+    <div class="li">${ico(I.cal)}<span class="li-main"><b>Ngày đầu tuần</b></span>
+      <span class="li-end" style="width:146px">${seg('set-ws', [['1', 'Thứ Hai'], ['0', 'CN']], String(st.weekStart))}</span></div>
+  </section>
+  <p class="list-f">Giờ còn lại tính trong từng tuần, từ ngày đầu tuần ở trên đến hết 7 ngày. Giờ tối đa của tháng: ${fmtH(st.weekLimit * 60)} × số ngày ÷ 7.</p>
+
+  <p class="list-h">Kỳ nghỉ dài · 長期休業</p>
+  <section class="list">
+    <label class="li" for="set-vweek">${ico(I.sun)}<span class="li-main"><b>Tối đa mỗi tuần</b><small>Trong kỳ nghỉ của trường</small></span>
+      <span class="li-end"><input id="set-vweek" class="in-pill" type="number" inputmode="decimal" min="1" max="80" step="0.5" value="${st.vacWeekLimit}">giờ</span></label>
+    ${st.vacations.map((v) => `<button class="li" data-act="vac-edit" data-id="${esc(v.id)}">${ico(I.cal)}<span class="li-main"><b>${esc(v.name || 'Kỳ nghỉ')}</b><small>${fmtDM(v.start)}/${v.start.slice(0, 4)} – ${fmtDM(v.end)}/${v.end.slice(0, 4)}</small></span><span class="li-end">${I.chev}</span></button>`).join('')}
+    <button class="li" data-act="vac-new">${ico(I.plus)}<span class="li-main"><b>Thêm kỳ nghỉ</b></span><span class="li-end">${I.chev}</span></button>
+  </section>
+  <p class="list-f">Tuần nằm trọn trong kỳ nghỉ dùng giới hạn ${fmtH(st.vacWeekLimit * 60)}/tuần.</p>
+
+  <p class="list-h">Dữ liệu</p>
+  <section class="list">
+    <button class="li" data-act="export">${ico(I.upload)}<span class="li-main"><b>Xuất bản sao lưu</b><small>${all.length} ca · ${list.length} quán · dữ liệu chỉ nằm trên máy này</small></span><span class="li-end">${I.chev}</span></button>
+    <button class="li" data-act="import">${ico(I.download)}<span class="li-main"><b>Nhập từ bản sao lưu</b><small>Thay thế dữ liệu hiện tại</small></span><span class="li-end">${I.chev}</span></button>
+    ${hasSample() ? `<button class="li" data-act="sample-clear">${ico(I.sparkle)}<span class="li-main"><b>Xoá dữ liệu mẫu</b></span></button>`
+      : !all.length ? `<button class="li" data-act="sample-load">${ico(I.sparkle)}<span class="li-main"><b>Nạp dữ liệu mẫu để xem thử</b></span></button>` : ''}
+    <button class="li danger" data-act="clear-all">${ico(I.trash, 'red')}<span class="li-main"><b>Xoá toàn bộ dữ liệu</b></span></button>
+  </section>
+  <p class="list-f">Quy định thường gặp với visa du học: tối đa 28 giờ mỗi tuần trong kỳ học, cộng tất cả các nơi làm; trong kỳ nghỉ dài do trường quy định có thể làm đến 40 giờ/tuần. Ứng dụng chỉ giúp bạn theo dõi. Hãy xác nhận quy định cụ thể với trường hoặc Cục Xuất nhập cảnh (出入国在留管理庁).</p>
+  </main>`;
+}
+
+/* ---------- storage: everything stays on this device (localStorage) ---------- */
+function loadLocal() {
+  try { const o = JSON.parse(localStorage.getItem(LS_DATA) || 'null'); if (o && o.docs) docs = o.docs; } catch (e) {}
+  try { const u = JSON.parse(localStorage.getItem(LS_UI) || '{}'); if (TABS.includes(u.tab)) ui.tab = u.tab; } catch (e) {}
+}
+function saveLocal() {
+  try { localStorage.setItem(LS_DATA, JSON.stringify({ docs })); }
+  catch (e) { toast('Không lưu được trên thiết bị này. Hãy xuất bản sao lưu ngay.', 'bad'); }
+}
+function saveUI() { try { localStorage.setItem(LS_UI, JSON.stringify({ tab: ui.tab })); } catch (e) {} }
+
+function commit(keys) {
+  for (const k of new Set(keys)) if (k.startsWith('m-') && docs[k] && !(docs[k].shifts || []).length) delete docs[k];
+  _st = null;
+  saveLocal();
+  render();
+}
+
+/* ---------- mutations ---------- */
+function putShift(shift, keys) {
+  const old = allShifts().find((s) => s.id === shift.id);
+  if (old) { const k = mkey(old.date); docs[k].shifts = docs[k].shifts.filter((s) => s.id !== shift.id); keys.push(k); }
+  const k = mkey(shift.date);
+  if (!docs[k]) docs[k] = { shifts: [] };
+  docs[k].shifts.push(shift); keys.push(k);
+}
+function dropShifts(pred, keys) {
+  for (const k of Object.keys(docs)) if (k.startsWith('m-')) {
+    const before = docs[k].shifts || [], after = before.filter((s) => !pred(s));
+    if (after.length !== before.length) { docs[k].shifts = after; keys.push(k); }
+  }
+}
+function makeShop(name, extra = {}) {
+  const used = new Set(shops().map((s) => s.color));
+  const color = SHOP_COLORS.find((c) => !used.has(c)) || SHOP_COLORS[shops().length % SHOP_COLORS.length];
+  return { id: newId(), name, wage: 0, color, address: '', phone: '', note: '', presets: [], ...extra };
+}
+function setSetting(patch) { Object.assign(ensureConfig().settings, patch); _st = null; commit(['config']); }
+
+/* ---------- sheets ---------- */
+let form = null, shopForm = null, vacForm = null;
+function openSheet(html) {
+  $('#sheet-body').innerHTML = html; $('#sheet').hidden = false; document.body.classList.add('locked');
+  const sc = $('#sheet-body .sheet-scroll'); if (sc) sc.scrollTop = 0;
+}
+function closeSheet() { $('#sheet').hidden = true; document.body.classList.remove('locked'); form = shopForm = vacForm = null; }
+const sheetHead = (title, sub = '', lAct = 'close', lIcon = I.x, lLabel = 'Đóng') => `<div class="sheet-head"><button class="circle" data-act="${lAct}" aria-label="${lLabel}">${lIcon}</button><div class="title"><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</div><span></span></div>`;
+const sheetFoot = (act, label, attrs = '') => `<div class="sheet-foot"><button class="cta dark block sheet-cta" data-act="${act}" ${attrs}>${label}</button></div>`;
+const dayLabel = (d) => (isDate(d) ? `${DOW_LONG[dowOf(d)]}, ${fmtDM(d)}${holidayName(d) ? ' · ngày lễ' : ''}` : '');
+const showErr = (id, msg) => { const e = $(id); e.textContent = msg; e.hidden = false; e.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
+
+function defaultDate() {
+  const t = todayStr();
+  if (ui.tab === 'week') return ui.ws <= t && t <= addDays(ui.ws, 6) ? t : ui.ws;
+  if (ui.tab === 'month' && ui.ym !== t.slice(0, 7)) return `${ui.ym}-01`;
+  return t;
+}
+const lastFor = (shopId) => allShifts().filter((s) => !shopId || s.shopId === shopId).sort((a, b) => (a.date + a.start < b.date + b.start ? 1 : -1))[0];
+
+function openShift(opts = {}) {
+  const ex = opts.id ? allShifts().find((s) => s.id === opts.id) : null;
+  const last = lastFor();
+  const shopId = ex ? ex.shopId : shopById(opts.shopId) ? opts.shopId : last && shopById(last.shopId) ? last.shopId : (shops()[0] || {}).id || null;
+  form = { id: ex ? ex.id : null, sample: !!(ex && ex.sample), shopId, date: ex ? ex.date : opts.date || defaultDate(),
+    start: '09:00', end: '13:00', breakMin: 0, note: ex ? ex.note || '' : '' };
+  if (ex) Object.assign(form, { start: ex.start, end: ex.end, breakMin: Number(ex.breakMin) || 0 });
+  else applyShopDefaults(opts.presetId);
+  openSheet(shiftSheetHTML());
+  updatePreview();
+}
+function applyShopDefaults(presetId) { // the shop's saved shift fills the times; without one, its most recent shift does
+  const ps = presetsOf(form.shopId);
+  const src = ps.find((p) => p.id === presetId) || ps[0] || lastFor(form.shopId);
+  if (src) Object.assign(form, { start: src.start, end: src.end, breakMin: Number(src.breakMin) || 0 });
+}
+function shopChips() {
+  if (!shops().length) return '<span class="sect-f" style="padding:0">Chưa có quán nào. Lưu quán một lần, lần sau chỉ cần chọn.</span><button class="chip dashed" data-act="sh-newshop">+ Thêm quán</button>';
+  return shops().map((s) => `<button class="chip ${form.shopId === s.id ? 'on' : ''}" data-act="sh-shop" data-id="${esc(s.id)}"><i class="dot" style="background:${form.shopId === s.id ? 'currentColor' : s.color}"></i><span>${esc(s.name)}</span></button>`).join('')
+    + '<button class="chip dashed" data-act="sh-newshop">+ Quán mới</button>';
+}
+function presetChips() {
+  const shop = shopById(form.shopId);
+  if (!shop) return '';
+  const ps = presetsOf(shop.id);
+  return `<div class="sect"><p class="sect-h">Ca thường làm</p>${ps.length
+    ? `<div class="chips">${ps.map((p) => `<button class="chip ${samePreset(p, form) ? 'on' : ''}" data-act="sh-preset" data-id="${esc(p.id)}"><span>${presetLabel(p)}</span></button>`).join('')}</div>`
+    : '<p class="sect-f">Quán này chưa lưu ca thường làm. <button class="link-btn" data-act="sh-editshop">Lưu ca thường làm</button> để lần sau chỉ cần chạm chọn.</p>'}</div>`;
+}
+function breakSeg() {
+  const opts = [0, 15, 30, 45, 60, 90];
+  if (!opts.includes(form.breakMin)) opts.push(form.breakMin);
+  return seg('sh-break', opts.sort((a, b) => a - b).map((v) => [String(v), v ? `${v}′` : 'Không']), String(form.breakMin));
+}
+function shiftSheetHTML() {
+  const t = todayStr();
+  return sheetHead(form.id ? 'Sửa ca' : 'Thêm ca', `<span id="sh-sub">${dayLabel(form.date)}</span>`) + `<div class="sheet-scroll">
+    <div class="sect"><p class="sect-h">Quán</p><div class="chips" id="sh-shops">${shopChips()}</div></div>
+    <div id="sh-presets">${presetChips()}</div>
+    <div class="sect"><p class="sect-h">Thời gian</p><div class="group">
+      <label class="g-row"><span>Ngày</span><input id="sh-date" class="in-pill" type="date" value="${form.date}"></label>
+      <div class="g-row"><div class="chips"><button class="chip" data-act="sh-quick" data-v="${t}">Hôm nay</button><button class="chip" data-act="sh-quick" data-v="${addDays(t, 1)}">Ngày mai</button><button class="chip" data-act="sh-quick" data-v="+7">+7 ngày</button></div></div>
+      <label class="g-row"><span>Giờ vào <span class="ja">出勤</span></span><input id="sh-start" class="in-pill" type="time" step="300" value="${form.start}"></label>
+      <label class="g-row"><span>Giờ ra <span class="ja">退勤</span></span><input id="sh-end" class="in-pill" type="time" step="300" value="${form.end}"></label>
+      <div class="g-row col"><span>Nghỉ giải lao <span class="ja">休憩</span></span><div id="sh-break">${breakSeg()}</div></div>
+      <label class="g-row"><span>Ghi chú</span><input id="sh-note" class="in-r" type="text" maxlength="200" placeholder="Không bắt buộc" value="${esc(form.note)}"></label>
+    </div></div>
+    <div id="sh-preview" class="preview" aria-live="polite"></div>
+    <p id="sh-err" class="err" hidden></p>
+    ${form.id ? `<div class="group"><button class="g-row center" data-act="sh-dup">${I.repeat}Chép sang +7 ngày</button><button class="g-row center danger" data-act="sh-del">${I.trash}Xoá ca</button></div>` : ''}
+  </div>${sheetFoot('sh-save', form.id ? 'Lưu thay đổi' : 'Lưu ca')}`;
+}
+function syncShiftForm() { // after a shop or saved-shift tap: refresh chips, time fields and the preview
+  $('#sh-shops').innerHTML = shopChips();
+  $('#sh-presets').innerHTML = presetChips();
+  $('#sh-start').value = form.start; $('#sh-end').value = form.end;
+  $('#sh-break').innerHTML = breakSeg();
+  $('#sh-err').hidden = true;
+  updatePreview();
+}
+function shiftErr() {
+  if (!shopById(form.shopId)) return 'Chọn quán, hoặc chạm “+ Quán mới” để lưu quán.';
+  if (!isDate(form.date)) return 'Chọn ngày làm.';
+  if (!isTime(form.start) || !isTime(form.end)) return 'Nhập giờ vào và giờ ra.';
+  if (form.start === form.end) return 'Giờ vào và giờ ra đang trùng nhau.';
+  if (shiftMin(form) <= 0) return 'Thời gian nghỉ dài hơn cả ca làm.';
+  return '';
+}
+function updatePreview() {
+  const box = $('#sh-preview'); if (!box || !form) return;
+  const sub = $('#sh-sub'); if (sub) sub.textContent = dayLabel(form.date);
+  if (!isDate(form.date) || !isTime(form.start) || !isTime(form.end) || form.start === form.end) { box.innerHTML = '<span class="muted">Nhập ngày và giờ để xem ca này ảnh hưởng thế nào đến tuần.</span>'; return; }
+  const net = shiftMin(form), gross = grossMin(form);
+  const others = allShifts().filter((s) => s.id !== form.id);
+  const day = buildIndex([...others, { ...form, id: '_new' }]).day;
+  const ws = weekStartOf(form.date), lim = weekLimitMin(ws);
+  const before = sumRange(buildIndex(others).day, ws, 7), after = sumRange(day, ws, 7);
+  const lines = [`<div class="pv-big"><b>${fmtH(net)}</b><span class="muted">làm việc${form.breakMin ? ` · nghỉ ${form.breakMin} phút` : ''}${isOvernight(form) ? ' · qua đêm, ra ca ngày hôm sau' : ''}</span></div>`];
+  const stt = statusOf(after, lim);
+  lines.push(`<div class="pv-line ${stt}">${stt === 'ok' ? I.ok : I.warn}<span>Tuần ${fmtDM(ws)} – ${fmtDM(addDays(ws, 6))}: ${fmtH(before)} → <b>${fmtH(after)}</b> / ${fmtH(lim)}${stt === 'over' ? ` · vượt ${fmtH(after - lim)}` : stt === 'near' ? ` · còn ${fmtH(lim - after)}` : ''}</span></div>`);
+  const shop = shopById(form.shopId), hol = holidayName(form.date);
+  if (shop && (Number(shop.wage) || Number(shop.wageWeekend) || Number(shop.wageHoliday))) {
+    const p = shiftPay(form, shop);
+    const tr = others.some((s) => s.shopId === shop.id && s.date === form.date) ? 0 : Number(shop.transport) || 0;
+    const parts = [`${hol ? `ngày lễ (${hol})` : p.kind === 'wkd' ? 'T7, CN' : 'ngày thường'} ${yen(p.wage)}/giờ`];
+    if (p.night) parts.push(`đêm ${fmtH(p.night)} +${nightPctOf(shop)}%`);
+    if (tr) parts.push(`tàu ${yen(tr)}`);
+    lines.push(`<div class="pv-line">${I.yen}<span><span class="yen">Ước tính ${yen(p.total + tr)}</span> <span class="muted">· ${parts.join(' · ')}</span></span></div>`);
+  } else if (hol) lines.push(`<div class="pv-line">${I.cal}<span class="muted">Ngày lễ: ${hol}</span></div>`);
+  if (gross > 360 && form.breakMin < 45) lines.push(`<div class="pv-line">${I.info}<span class="muted">Ca trên 6 tiếng thường có ít nhất 45 phút nghỉ (労働基準法).</span></div>`);
+  box.innerHTML = lines.join('');
+}
+function saveShift() {
+  const err = shiftErr();
+  if (err) return showErr('#sh-err', err);
+  const keys = [];
+  const shift = { id: form.id || newId(), shopId: form.shopId, date: form.date, start: form.start, end: form.end, breakMin: form.breakMin, note: form.note.trim() };
+  if (form.sample) shift.sample = true;
+  putShift(shift, keys);
+  closeSheet();
+  if (ui.tab === 'month') ui.ym = shift.date.slice(0, 7); else { ui.tab = 'week'; ui.ws = weekStartOf(shift.date); saveUI(); }
+  commit(keys);
+  const w = weekStats(weekStartOf(shift.date));
+  if (w.status === 'over') toast(`Đã lưu. Tuần ${fmtDM(w.ws)} vượt ${fmtH(w.total - w.limit)}!`, 'bad');
+  else toast(`Đã lưu ${fmtH(shiftMin(shift))} · tuần ${fmtH(w.total)}/${fmtH(w.limit)}`);
+}
+function deleteShift(id) {
+  const s = allShifts().find((x) => x.id === id);
+  if (!s) return;
+  const keys = [];
+  dropShifts((x) => x.id === id, keys);
+  closeSheet(); commit(keys);
+  toast('Đã xoá ca', '', { label: 'Hoàn tác', fn: () => { const k = []; putShift(s, k); commit(k); toast('Đã khôi phục ca'); } });
+}
+
+/* shop sheet: name, wages, pay cycle, saved shifts, contact details. Opened from the shift form it returns there with the shop selected. */
+const blankPreset = () => ({ id: newId(), name: '', start: '', end: '', breakMin: 0 });
+function openShop(id, returnForm = null) {
+  const ex = id ? shopById(id) : null;
+  const num = (v) => (Number(v) ? String(v) : '');
+  shopForm = { id: ex ? ex.id : null, name: ex ? ex.name : '', wage: num(ex && ex.wage), wageWeekend: num(ex && ex.wageWeekend), wageHoliday: num(ex && ex.wageHoliday),
+    nightPct: String(nightPctOf(ex || {})), transport: num(ex && ex.transport), closeDay: String(Number(ex && ex.closeDay) || 0),
+    payDay: num(ex && ex.payDay), payMonth: ex && ex.payMonth === 0 ? '0' : '1',
+    phone: (ex && ex.phone) || '', address: (ex && ex.address) || '', note: (ex && ex.note) || '', color: ex ? ex.color : makeShop('').color,
+    presets: ex && ex.presets && ex.presets.length ? clone(ex.presets) : [blankPreset()], returnForm };
+  renderShopSheet();
+}
+function presetEditors() {
+  return shopForm.presets.map((p, i) => `<div class="group preset-ed" data-pi="${i}">
+    <div class="g-row"><input class="in-l" type="text" maxlength="30" data-pf="name" value="${esc(p.name)}" placeholder="Tên ca, ví dụ: Ca sáng" aria-label="Tên ca"><button class="mini-x" data-act="pr-rm" data-pi="${i}" aria-label="Xoá ca này">${I.x}</button></div>
+    <label class="g-row"><span>Giờ vào</span><input class="in-pill" type="time" data-pf="start" value="${esc(p.start)}"></label>
+    <label class="g-row"><span>Giờ ra</span><input class="in-pill" type="time" data-pf="end" value="${esc(p.end)}"></label>
+    <label class="g-row"><span>Nghỉ</span><span class="in-unit"><input class="in-r" type="number" inputmode="numeric" min="0" max="480" step="5" data-pf="breakMin" value="${Number(p.breakMin) || 0}"><em>phút</em></span></label>
+  </div>`).join('');
+}
+const moneyRow = (id, label, v, ph) => `<label class="g-row"><span>${label}</span><span class="in-unit"><em>¥</em><input id="${id}" class="in-r" type="number" inputmode="numeric" min="0" step="10" value="${esc(v)}" placeholder="${ph}"></span></label>`;
+function renderShopSheet() {
+  const f = shopForm;
+  const head = f.returnForm ? sheetHead(f.id ? 'Thông tin quán' : 'Quán mới', 'Lưu xong sẽ quay lại ca đang thêm', 'shop-back', I.prev, 'Quay lại')
+    : sheetHead(f.id ? 'Thông tin quán' : 'Quán mới', f.id ? `${allShifts().filter((s) => s.shopId === f.id).length} ca đã ghi` : 'Lưu một lần, lần sau chỉ cần chọn');
+  openSheet(head + `<div class="sheet-scroll">
+    <span class="avatar xl" id="shop-avatar" style="--c:${f.color}">${esc(initial(f.name))}</span>
+    <div class="group"><label class="g-row"><span>Tên quán</span><input id="shop-name" class="in-r" type="text" maxlength="60" value="${esc(f.name)}" placeholder="Ví dụ: Sukiya Baba" autocomplete="off"></label></div>
+    <div class="sect"><p class="sect-h">Lương và phụ cấp</p><div class="group">
+      ${moneyRow('shop-wage', '時給 ngày thường', f.wage, '1200')}
+      ${moneyRow('shop-wage-wkd', '時給 T7, CN', f.wageWeekend, 'như ngày thường')}
+      ${moneyRow('shop-wage-hol', '時給 ngày lễ', f.wageHoliday, 'như T7, CN')}
+      <label class="g-row"><span>Phụ cấp đêm</span><span class="in-unit"><input id="shop-night" class="in-r" type="number" inputmode="numeric" min="0" max="100" step="5" value="${esc(f.nightPct)}" placeholder="25"><em>%</em></span></label>
+      ${moneyRow('shop-transport', 'Tiền tàu mỗi ngày', f.transport, '0')}
+    </div><p class="sect-f">Ngày lễ Nhật (祝日) được nhận tự động. Phụ cấp đêm (深夜手当) cộng thêm cho phần làm từ 22:00 đến 5:00. Tiền tàu tính khứ hồi, mỗi ngày đi làm một lần.</p></div>
+    <div class="sect"><p class="sect-h">Kỳ lương</p><div class="group">
+      <label class="g-row"><span>Ngày chốt <span class="ja">締め日</span></span><select id="shop-close" class="in-r">${[0, 5, 10, 15, 20, 25].map((d) => `<option value="${d}" ${String(d) === f.closeDay ? 'selected' : ''}>${d ? `Ngày ${d}` : 'Cuối tháng'}</option>`).join('')}</select></label>
+      <label class="g-row"><span>Ngày nhận <span class="ja">給料日</span></span><span class="in-unit"><em>ngày</em><input id="shop-payday" class="in-r" type="number" inputmode="numeric" min="1" max="31" value="${esc(f.payDay)}" placeholder="25" style="max-width:60px"></span></label>
+      <label class="g-row"><span>Tháng nhận</span><select id="shop-paymonth" class="in-r"><option value="1" ${f.payMonth === '1' ? 'selected' : ''}>Tháng sau</option><option value="0" ${f.payMonth === '0' ? 'selected' : ''}>Cùng tháng chốt</option></select></label>
+    </div></div>
+    <div class="sect"><p class="sect-h">Ca thường làm</p><div class="stack-s" id="shop-presets">${presetEditors()}</div>
+      <button class="add-row" data-act="pr-add">${I.plus}Thêm ca thường làm</button>
+      <p class="sect-f">Khi thêm ca chỉ cần chạm vào ca, không phải nhập lại giờ.</p></div>
+    <div class="sect"><p class="sect-h">Liên hệ</p><div class="group">
+      <label class="g-row"><span>Địa chỉ</span><input id="shop-address" class="in-r" type="text" maxlength="120" value="${esc(f.address)}" placeholder="新宿区大久保 1-2-3" autocomplete="off"></label>
+      <label class="g-row"><span>Điện thoại</span><input id="shop-phone" class="in-r" type="tel" inputmode="tel" maxlength="30" value="${esc(f.phone)}" placeholder="03-1234-5678" autocomplete="off"></label>
+      <label class="g-row"><span>Ghi chú</span><input id="shop-note" class="in-r" type="text" maxlength="200" value="${esc(f.note)}" placeholder="Quản lý, hạn nộp シフト…"></label>
+    </div></div>
+    <div class="sect"><p class="sect-h">Màu</p><div class="swatches">${SHOP_COLORS.map((c) => `<button class="swatch ${f.color === c ? 'on' : ''}" style="background:${c}" data-act="shop-color" data-v="${c}" aria-label="Màu ${c}"></button>`).join('')}</div></div>
+    <p id="shop-err" class="err" hidden></p>
+    ${f.id && !f.returnForm ? `<div class="group"><button class="g-row center danger" data-act="shop-del">${I.trash}Xoá quán</button></div>` : ''}
+  </div>${sheetFoot('shop-save', 'Lưu quán')}`);
+}
+function saveShop() {
+  const f = shopForm;
+  const name = f.name.trim();
+  if (!name) return showErr('#shop-err', 'Nhập tên quán.');
+  const presets = [];
+  for (const p of f.presets) {
+    const pname = String(p.name || '').trim();
+    if (!p.start && !p.end && !pname) continue;
+    if (!isTime(p.start) || !isTime(p.end)) return showErr('#shop-err', `Ca “${pname || 'chưa đặt tên'}” cần đủ giờ vào và giờ ra.`);
+    if (p.start === p.end) return showErr('#shop-err', `Ca “${pname || p.start}” có giờ vào và giờ ra trùng nhau.`);
+    const breakMin = Math.max(0, Math.round(Number(p.breakMin) || 0));
+    if (shiftMin({ start: p.start, end: p.end, breakMin }) <= 0) return showErr('#shop-err', `Ca “${pname || p.start}” có thời gian nghỉ dài hơn cả ca.`);
+    presets.push({ id: p.id || newId(), name: pname, start: p.start, end: p.end, breakMin });
+  }
+  const yenNum = (v) => Math.max(0, Math.round(Number(v) || 0));
+  const data = { name, wage: yenNum(f.wage), wageWeekend: yenNum(f.wageWeekend), wageHoliday: yenNum(f.wageHoliday),
+    nightPct: f.nightPct === '' ? 25 : clamp(Math.round(Number(f.nightPct) || 0), 0, 100), transport: yenNum(f.transport),
+    closeDay: Number(f.closeDay) || 0, payDay: clamp(Math.round(Number(f.payDay) || 0), 0, 31), payMonth: f.payMonth === '0' ? 0 : 1,
+    phone: f.phone.trim(), address: f.address.trim(), note: f.note.trim(), color: f.color, presets };
+  const cfg = ensureConfig();
+  let id = f.id;
+  if (id) Object.assign(cfg.shops.find((x) => x.id === id), data);
+  else { const s = { ...makeShop(name), ...data }; cfg.shops.push(s); id = s.id; }
+  const ret = f.returnForm;
+  if (ret) {
+    shopForm = null; commit(['config']);
+    form = { ...ret, shopId: id };
+    if (!form.id) applyShopDefaults();
+    openSheet(shiftSheetHTML()); updatePreview();
+  } else { closeSheet(); commit(['config']); }
+  toast(`Đã lưu quán${presets.length ? ` với ${presets.length} ca thường làm` : ''}`);
+}
+function deleteShop() {
+  const id = shopForm.id, keys = ['config'];
+  ensureConfig().shops = shops().filter((s) => s.id !== id);
+  dropShifts((s) => s.shopId === id, keys);
+  closeSheet(); commit(keys); toast('Đã xoá quán');
+}
+
+function openVac(id) {
+  const ex = id ? settings().vacations.find((v) => v.id === id) : null;
+  const t = todayStr();
+  vacForm = { id: ex ? ex.id : null };
+  openSheet(sheetHead(ex ? 'Kỳ nghỉ' : 'Kỳ nghỉ mới', '長期休業') + `<div class="sheet-scroll">
+    <div class="sect"><div class="group">
+      <label class="g-row"><span>Tên</span><input id="vac-name" class="in-r" type="text" maxlength="40" value="${esc(ex ? ex.name : '')}" placeholder="Nghỉ hè"></label>
+      <label class="g-row"><span>Từ ngày</span><input id="vac-start" class="in-pill" type="date" value="${ex ? ex.start : t}"></label>
+      <label class="g-row"><span>Đến ngày</span><input id="vac-end" class="in-pill" type="date" value="${ex ? ex.end : addDays(t, 41)}"></label>
+    </div><p class="sect-f">Theo lịch nghỉ chính thức của trường (夏休み, 冬休み, 春休み). Tuần nằm trọn trong kỳ nghỉ dùng giới hạn ${fmtH(settings().vacWeekLimit * 60)}/tuần.</p></div>
+    <p id="vac-err" class="err" hidden></p>
+    ${ex ? `<div class="group"><button class="g-row center danger" data-act="vac-del">${I.trash}Xoá kỳ nghỉ</button></div>` : ''}
+  </div>${sheetFoot('vac-save', 'Lưu kỳ nghỉ')}`);
+}
+function saveVac() {
+  const name = $('#vac-name').value.trim(), start = $('#vac-start').value, end = $('#vac-end').value;
+  if (!isDate(start) || !isDate(end) || start > end) return showErr('#vac-err', 'Ngày bắt đầu phải trước ngày kết thúc.');
+  const list = settings().vacations.filter((v) => v.id !== vacForm.id);
+  list.push({ id: vacForm.id || newId(), name: name || 'Kỳ nghỉ', start, end });
+  list.sort((a, b) => a.start.localeCompare(b.start));
+  closeSheet(); setSetting({ vacations: list }); toast('Đã lưu kỳ nghỉ');
+}
+
+function openDay(d) {
+  const list = idx.byDate[d] || [], tot = idx.day[d] || 0, ws = weekStartOf(d), left = availableOn(d), os = overIds(ws), hol = holidayName(d), t = todayStr();
+  const groups = list.map((s) => {
+    const shop = shopById(s.shopId), tag = os.has(s.id) ? '<span class="tag red">Vượt giới hạn</span>' : s.date > t ? '<span class="tag">Dự kiến</span>' : '';
+    return `<div class="group">
+      <button class="g-row" data-act="edit" data-id="${esc(s.id)}"><span class="shift-shop"><i class="dot" style="background:${(shop && shop.color) || '#8E8E93'}"></i><span>${esc(shopName(s.shopId))}</span></span>${tag}<span class="li-end">${I.chev}</span></button>
+      <div class="g-row"><span>Giờ làm</span><b class="t" style="font-weight:600">${esc(s.start)} – ${esc(s.end)}${isOvernight(s) ? ' (+1)' : ''}</b></div>
+      <div class="g-row"><span>Nghỉ giải lao <span class="ja">休憩</span></span><b class="t" style="font-weight:600">${Number(s.breakMin) || 0} phút</b></div>
+      ${list.length > 1 ? `<div class="g-row"><span>Số giờ của ca</span><b class="t" style="font-weight:600">${fmtH(shiftMin(s))}</b></div>` : ''}
+    </div>`;
+  }).join('');
+  openSheet(sheetHead(`${DOW_LONG[dowOf(d)]}, ${fmtDM(d)}`, hol ? `${esc(hol)} · ngày lễ` : list.length ? `${list.length} ca trong ngày` : 'Chưa có ca') + `<div class="sheet-scroll">
+    ${list.length ? `<div class="stack-s">${groups}</div>` : '<p class="sect-f">Chưa có ca nào trong ngày này.</p>'}
+    <div class="group">
+      <div class="g-row"><span>Tổng giờ trong ngày</span><b class="t" style="font-size:22px;font-weight:600;letter-spacing:-.02em">${fmtH(tot)}</b></div>
+      <div class="g-row"><span>Còn lại trong tuần<br><small class="muted t">${fmtDM(ws)} – ${fmtDM(addDays(ws, 6))}</small></span><b class="t" style="font-size:22px;font-weight:600;letter-spacing:-.02em;color:var(${left ? '--green-ink' : '--red-ink'})">${fmtH(left)}</b></div>
+    </div>
+    </div>${sheetFoot('add', 'Thêm ca ngày này', `data-date="${d}"`)}`);
+}
+
+/* ---------- action sheet (destructive confirmations) ---------- */
+let asActions = [];
+function actionSheet({ title = '', message = '', actions = [] }) {
+  asActions = actions;
+  const el = $('#as');
+  el.innerHTML = `<div class="as-bg" data-act="as-cancel"></div><div class="as-panel" role="dialog" aria-modal="true">
+    <div class="as-group">${title || message ? `<div class="as-head">${title ? `<b>${esc(title)}</b>` : ''}${esc(message)}</div>` : ''}
+      ${actions.map((a, i) => `<button class="as-btn ${a.danger ? 'danger' : ''}" data-act="as-do" data-i="${i}">${esc(a.label)}</button>`).join('')}</div>
+    <button class="as-btn cancel" data-act="as-cancel">Huỷ</button></div>`;
+  el.hidden = false;
+}
+function closeAS() { $('#as').hidden = true; asActions = []; }
+const askConfirm = ({ title, text, ok, onOk }) => actionSheet({ title, message: text, actions: [{ label: ok, danger: true, fn: onOk }] });
+
+/* ---------- data tools ---------- */
+function loadSample() {
+  const t = todayStr(), ws = weekStartOf(t), prev = addDays(ws, -7), next = addDays(ws, 7);
+  const A = { id: 'sample-konbini', name: 'Konbini Ōkubo', wage: 1200, wageWeekend: 1250, wageHoliday: 1300, nightPct: 25, transport: 340, closeDay: 0, payDay: 25, payMonth: 1, color: SHOP_COLORS[0], sample: true, address: 'Ōkubo, Shinjuku', phone: '', note: 'Nộp シフト trước thứ Sáu',
+    presets: [{ id: 'sp-a1', name: 'Ca sáng', start: '09:00', end: '13:00', breakMin: 0 }, { id: 'sp-a2', name: 'Ca dài', start: '09:00', end: '14:00', breakMin: 0 }] };
+  const B = { id: 'sample-izakaya', name: 'Izakaya Hana', wage: 1300, wageWeekend: 1400, nightPct: 25, transport: 0, closeDay: 15, payDay: 25, payMonth: 0, color: SHOP_COLORS[1], sample: true, address: 'Takadanobaba', phone: '', note: '',
+    presets: [{ id: 'sp-b1', name: 'Ca tối', start: '18:00', end: '22:00', breakMin: 0 }, { id: 'sp-b2', name: 'Ca tối dài', start: '17:00', end: '23:00', breakMin: 30 }] };
+  const plan = [
+    [prev, 0, A, '09:00', '14:00', 0], [prev, 1, B, '17:00', '23:00', 30], [prev, 2, A, '09:00', '13:00', 0], [prev, 3, B, '17:00', '23:00', 30], [prev, 4, A, '09:00', '14:00', 0], [prev, 5, B, '16:00', '22:30', 30],
+    [ws, 0, A, '09:00', '13:00', 0], [ws, 1, B, '18:00', '22:00', 0], [ws, 3, A, '09:00', '13:30', 0], [ws, 4, B, '17:00', '22:00', 0], [ws, 5, B, '16:00', '21:00', 0], [ws, 6, A, '10:00', '12:00', 0],
+    [next, 0, A, '09:00', '13:00', 0], [next, 2, B, '18:00', '22:00', 0],
+  ];
+  const cfg = ensureConfig(), keys = ['config'];
+  for (const s of [A, B]) if (!cfg.shops.some((x) => x.id === s.id)) cfg.shops.push(s);
+  plan.forEach(([w, i, shop, start, end, br], n) => putShift({ id: `sample-${n}`, shopId: shop.id, date: addDays(w, i), start, end, breakMin: br, note: '', sample: true }, keys));
+  ui.ws = ws; ui.tab = 'week';
+  commit(keys); toast('Đã nạp dữ liệu mẫu');
+}
+function clearSample() {
+  const keys = ['config'];
+  ensureConfig().shops = shops().filter((s) => !s.sample);
+  dropShifts((s) => s.sample, keys);
+  commit(keys); toast('Đã xoá dữ liệu mẫu');
+}
+function clearAll() { const keys = Object.keys(docs); docs = {}; commit(keys); toast('Đã xoá toàn bộ dữ liệu'); }
+
+async function exportData() {
+  const payload = { app: 'arubaito', version: 1, exportedAt: new Date().toISOString(), config: docs.config || { shops: [], settings: {} }, shifts: allShifts() };
+  const text = JSON.stringify(payload, null, 2), name = `arubaito-${todayStr()}.json`;
+  const c = window.claude;
+  if (c && typeof c.use === 'function') {
+    let dl = null; try { dl = await c.use('downloads'); } catch (e) {}
+    if (dl) {
+      try { await dl.save({ filename: name, data: text }); toast('Đã xuất bản sao lưu'); }
+      catch (e) { if (!e || e.code !== 'declined') toast('Không xuất được tệp ở chế độ xem này.', 'bad'); }
+      return;
+    }
+  }
+  try {
+    const file = new File([text], name, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' })); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+function importData(text) {
+  let o;
+  try { o = JSON.parse(text); } catch (e) { toast('Tệp không đúng định dạng JSON.', 'bad'); return; }
+  const okShift = (s) => s && typeof s.id === 'string' && isDate(s.date) && isTime(s.start) && isTime(s.end) && typeof s.shopId === 'string';
+  if (!o || o.app !== 'arubaito' || !o.config || !Array.isArray(o.shifts)) { toast('Đây không phải tệp sao lưu của Sổ giờ Arubaito.', 'bad'); return; }
+  const shifts = o.shifts.filter(okShift);
+  askConfirm({ title: 'Nhập bản sao lưu?', text: `Tệp có ${shifts.length} ca và ${(o.config.shops || []).length} quán. Toàn bộ dữ liệu hiện tại sẽ được thay thế.`, ok: 'Thay thế', onOk: () => {
+    const keys = Object.keys(docs);
+    docs = { config: { shops: Array.isArray(o.config.shops) ? o.config.shops : [], settings: o.config.settings || {} } };
+    for (const s of shifts) { const k = mkey(s.date); (docs[k] || (docs[k] = { shifts: [] })).shifts.push({ id: s.id, shopId: s.shopId, date: s.date, start: s.start, end: s.end, breakMin: Number(s.breakMin) || 0, note: String(s.note || '').slice(0, 200), ...(s.sample ? { sample: true } : {}) }); }
+    _st = null; ui.ws = weekStartOf(todayStr());
+    commit([...keys, ...Object.keys(docs)]); toast(`Đã nhập ${shifts.length} ca`);
+  } });
+}
+
+/* ---------- toast (with an optional undo-style action) ---------- */
+let toastT = 0, toastAction = null;
+function toast(msg, kind = '', action = null) {
+  const el = $('#toast');
+  el.innerHTML = `<span>${esc(msg)}</span>${action ? `<button data-act="toast-act">${esc(action.label)}</button>` : ''}`;
+  toastAction = action ? action.fn : null;
+  el.className = `toast show ${kind}`;
+  clearTimeout(toastT);
+  toastT = setTimeout(() => { el.className = `toast ${kind}`; toastAction = null; }, action ? 5000 : kind === 'bad' ? 4200 : 2600);
+}
+
+/* ---------- events ---------- */
+const ACT = {
+  'wk-prev': () => { ui.ws = addDays(ui.ws, -7); render(); },
+  'wk-next': () => { ui.ws = addDays(ui.ws, 7); render(); scrollTo(0, 0); },
+  'wk-today': () => { ui.ws = weekStartOf(todayStr()); render(); },
+  'mo-prev': () => { ui.ym = addMonths(ui.ym, -1); render(); },
+  'mo-next': () => { ui.ym = addMonths(ui.ym, 1); render(); },
+  'mo-today': () => { ui.ym = todayStr().slice(0, 7); render(); },
+  mseg: (el) => { ui.mseg = el.dataset.v; render(); },
+  'go-month': (el) => { ui.tab = 'month'; ui.mseg = 'hours'; ui.ym = el.dataset.ym || ui.ws.slice(0, 7); saveUI(); render(); scrollTo(0, 0); },
+  'pay-toggle': (el) => { const id = el.dataset.id; ui.payOpen = el.closest('.acc').classList.contains('open') ? '' : id; render(); },
+  'goto-week': (el) => { ui.tab = 'week'; ui.ws = el.dataset.ws; saveUI(); render(); scrollTo(0, 0); },
+  add: (el) => openShift({ date: el.dataset.date, shopId: el.dataset.shop, presetId: el.dataset.preset }),
+  edit: (el) => openShift({ id: el.dataset.id }),
+  day: (el) => openDay(el.dataset.date),
+  close: () => closeSheet(),
+  'as-do': (el) => { const a = asActions[Number(el.dataset.i)]; closeAS(); if (a) a.fn(); },
+  'as-cancel': () => closeAS(),
+  'toast-act': () => { const fn = toastAction; toastAction = null; $('#toast').className = 'toast'; if (fn) fn(); },
+  'swipe-del': (el) => deleteShift(el.dataset.id),
+
+  'sh-shop': (el) => { form.shopId = el.dataset.id; if (!form.id) applyShopDefaults(); syncShiftForm(); },
+  'sh-preset': (el) => {
+    const p = presetsOf(form.shopId).find((x) => x.id === el.dataset.id); if (!p) return;
+    Object.assign(form, { start: p.start, end: p.end, breakMin: Number(p.breakMin) || 0 }); syncShiftForm();
+  },
+  'sh-newshop': () => { const ret = { ...form }; form = null; openShop(null, ret); },
+  'sh-editshop': () => { const ret = { ...form }; form = null; openShop(ret.shopId, ret); },
+  'sh-break': (el) => { form.breakMin = Number(el.dataset.v); $('#sh-break').innerHTML = breakSeg(); $('#sh-presets').innerHTML = presetChips(); updatePreview(); },
+  'sh-quick': (el) => { form.date = el.dataset.v === '+7' ? addDays(isDate(form.date) ? form.date : todayStr(), 7) : el.dataset.v; $('#sh-date').value = form.date; updatePreview(); },
+  'sh-save': () => saveShift(),
+  'sh-del': () => { const id = form.id; actionSheet({ title: 'Xoá ca này?', message: 'Bạn có thể hoàn tác ngay sau khi xoá.', actions: [{ label: 'Xoá ca', danger: true, fn: () => deleteShift(id) }] }); },
+  'sh-dup': () => {
+    const src = allShifts().find((s) => s.id === form.id); if (!src) return;
+    const copy = { ...src, id: newId(), date: addDays(src.date, 7) }; delete copy.sample;
+    const keys = []; putShift(copy, keys); closeSheet();
+    if (ui.tab === 'week') ui.ws = weekStartOf(copy.date);
+    commit(keys); toast(`Đã chép sang ${DOW[dowOf(copy.date)]} ${fmtDM(copy.date)}`);
+  },
+
+  'shop-new': () => openShop(null),
+  'shop-edit': (el) => openShop(el.dataset.id),
+  'shop-color': (el) => {
+    shopForm.color = el.dataset.v;
+    document.querySelectorAll('.swatch').forEach((s) => s.classList.toggle('on', s.dataset.v === shopForm.color));
+    $('#shop-avatar').style.setProperty('--c', shopForm.color);
+  },
+  'shop-save': () => saveShop(),
+  'shop-del': () => {
+    const n = allShifts().filter((s) => s.shopId === shopForm.id).length;
+    actionSheet({ title: `Xoá quán “${shopForm.name}”?`, message: n ? `${n} ca làm ở quán này cũng sẽ bị xoá.` : 'Quán chưa có ca nào.', actions: [{ label: 'Xoá quán', danger: true, fn: deleteShop }] });
+  },
+  'shop-back': () => { const ret = shopForm.returnForm; shopForm = null; form = ret; openSheet(shiftSheetHTML()); updatePreview(); },
+  'pr-add': () => { shopForm.presets.push(blankPreset()); $('#shop-presets').innerHTML = presetEditors(); const ins = document.querySelectorAll('#shop-presets .in-l'); ins[ins.length - 1].focus(); },
+  'pr-rm': (el) => { shopForm.presets.splice(Number(el.dataset.pi), 1); $('#shop-presets').innerHTML = presetEditors(); },
+
+  'vac-new': () => openVac(null),
+  'vac-edit': (el) => openVac(el.dataset.id),
+  'vac-save': () => saveVac(),
+  'vac-del': () => { const id = vacForm.id; closeSheet(); setSetting({ vacations: settings().vacations.filter((v) => v.id !== id) }); toast('Đã xoá kỳ nghỉ'); },
+
+  'set-ws': (el) => { setSetting({ weekStart: Number(el.dataset.v) }); ui.ws = weekStartOf(ui.ws); render(); },
+  export: () => exportData(),
+  import: () => { const f = $('#import-file'); f.value = ''; f.click(); },
+  'sample-load': () => loadSample(),
+  'sample-clear': () => clearSample(),
+  'clear-all': () => askConfirm({ title: 'Xoá toàn bộ dữ liệu?', text: `Tất cả ${allShifts().length} ca, ${shops().length} quán và cài đặt sẽ bị xoá vĩnh viễn. Nên xuất sao lưu trước.`, ok: 'Xoá hết', onOk: clearAll }),
+};
+document.addEventListener('click', (e) => {
+  const tab = e.target.closest('[data-tab]');
+  if (tab) { ui.tab = tab.dataset.tab; saveUI(); render(); scrollTo(0, 0); return; }
+  const el = e.target.closest('[data-act]');
+  if (!el || !ACT[el.dataset.act]) return;
+  if (el.classList.contains('shift')) { // a tap right after a swipe, or on an opened row, only settles the row
+    if (el.dataset.swiped) return;
+    if (el.closest('.swipe').classList.contains('open')) { closeSwipes(); return; }
+  }
+  e.preventDefault();
+  ACT[el.dataset.act](el);
+});
+
+/* swipe left on a shift card to reveal Xoá, like iOS lists */
+const OPEN = 96;
+let drag = null;
+function closeSwipes(except) {
+  document.querySelectorAll('.swipe.open, .swipe.reveal').forEach((w) => {
+    if (w === except) return;
+    w.classList.remove('open'); $('.shift', w).style.transform = '';
+    setTimeout(() => { if (!w.classList.contains('open')) w.classList.remove('reveal'); }, 300);
+  });
+}
+document.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('.swipe-del')) return;
+  const card = e.target.closest('.swipe .shift'), wrap = card && card.closest('.swipe');
+  closeSwipes(wrap);
+  if (!card || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  drag = { card, wrap, x0: e.clientX, y0: e.clientY, base: wrap.classList.contains('open') ? -OPEN : 0, dx: 0, on: false };
+});
+document.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+  if (!drag.on) {
+    if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) { drag = null; return; }
+    if (Math.abs(dx) < 8) return;
+    drag.on = true; drag.wrap.classList.add('reveal'); drag.card.style.transition = 'none';
+  }
+  drag.dx = dx;
+  drag.card.style.transform = `translateX(${clamp(drag.base + dx, -OPEN - 36, 0)}px)`;
+});
+function endDrag() {
+  if (!drag) return;
+  const d = drag; drag = null;
+  if (!d.on) return;
+  d.card.style.transition = '';
+  const open = d.base + d.dx < -OPEN / 2;
+  d.wrap.classList.toggle('open', open);
+  d.card.style.transform = open ? `translateX(${-OPEN}px)` : '';
+  if (!open) setTimeout(() => { if (!d.wrap.classList.contains('open')) d.wrap.classList.remove('reveal'); }, 300);
+  d.card.dataset.swiped = '1';
+  setTimeout(() => { delete d.card.dataset.swiped; }, 80);
+}
+document.addEventListener('pointerup', endDrag);
+document.addEventListener('pointercancel', endDrag);
+
+document.addEventListener('input', (e) => {
+  const el = e.target, id = el.id;
+  if (shopForm) {
+    const field = { 'shop-name': 'name', 'shop-wage': 'wage', 'shop-wage-wkd': 'wageWeekend', 'shop-wage-hol': 'wageHoliday', 'shop-night': 'nightPct', 'shop-transport': 'transport',
+      'shop-close': 'closeDay', 'shop-payday': 'payDay', 'shop-paymonth': 'payMonth', 'shop-phone': 'phone', 'shop-address': 'address', 'shop-note': 'note' }[id];
+    if (field) shopForm[field] = el.value;
+    if (id === 'shop-name') $('#shop-avatar').textContent = initial(el.value);
+    const row = el.closest('.preset-ed');
+    if (row && el.dataset.pf) shopForm.presets[Number(row.dataset.pi)][el.dataset.pf] = el.value;
+    return;
+  }
+  if (!form) return;
+  if (id === 'sh-date') form.date = el.value;
+  else if (id === 'sh-start') form.start = el.value;
+  else if (id === 'sh-end') form.end = el.value;
+  else if (id === 'sh-note') { form.note = el.value; return; }
+  else return;
+  $('#sh-err').hidden = true;
+  if (id !== 'sh-date') $('#sh-presets').innerHTML = presetChips();
+  updatePreview();
+});
+document.addEventListener('change', (e) => {
+  const el = e.target, id = el.id;
+  const num = (lo, hi) => { const v = Number(el.value); return Number.isFinite(v) && v > 0 ? clamp(Math.round(v * 2) / 2, lo, hi) : null; };
+  if (id === 'set-week') { const v = num(1, 80); if (v) setSetting({ weekLimit: v }); else render(); }
+  else if (id === 'set-vweek') { const v = num(1, 80); if (v) setSetting({ vacWeekLimit: v }); else render(); }
+  else if (id === 'import-file' && el.files && el.files[0]) { const r = new FileReader(); r.onload = () => importData(String(r.result || '')); r.readAsText(el.files[0]); }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { if (!$('#as').hidden) closeAS(); else if (!$('#sheet').hidden) closeSheet(); }
+  if (e.key === 'Enter' && e.target.tagName === 'INPUT' && !$('#sheet').hidden) { const btn = $('#sheet-body .sheet-cta'); if (btn) { e.preventDefault(); btn.click(); } }
+});
+document.addEventListener('visibilitychange', () => { if (!document.hidden && $('#sheet').hidden) render(); });
+setInterval(() => { if (!document.hidden && $('#sheet').hidden && $('#as').hidden && ui.tab === 'week' && !document.querySelector('.swipe.open')) render(); }, 60000);
+
+/* ---------- boot ---------- */
+loadLocal();
+render();
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+})();
+</script>
