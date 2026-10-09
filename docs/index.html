@@ -218,6 +218,22 @@ svg{flex:none}
 .chips-s{display:flex;flex-wrap:wrap;gap:6px}
 .chip-s{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 11px;border-radius:999px;border:1px solid var(--line);font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
 .chip-s svg{width:14px;height:14px;color:var(--ink-2)}
+.next-top.press{width:100%;text-align:left}
+.next-top .go{margin-left:auto}
+.punch{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:var(--r-l);background:var(--fill)}
+.punch-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.punch-big{display:flex;align-items:baseline;gap:6px}
+.punch-big b{font-size:34px;font-weight:600;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.punch-big span{font-size:14px;color:var(--ink-2)}
+.punch-st{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--green-ink);white-space:nowrap}
+.punch-st.brk{color:var(--amber-ink)}
+.punch-st i{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 1.6s ease-in-out infinite}
+.punch-f{font-size:13.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.punch-f.warn{color:var(--amber-ink);font-weight:500}
+.punch .cta{min-height:54px;font-size:16px}
+.tag.ok{background:var(--green-soft);color:var(--green-ink)}
+.tag.live{background:var(--amber-soft);color:var(--amber-ink)}
+@keyframes pulse{50%{opacity:.35}}
 .go{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--pri);color:var(--on-pri);flex:none}
 .go svg{width:20px;height:20px}
 
@@ -511,9 +527,16 @@ const DOW_JA = ['日', '月', '火', '水', '木', '金', '土'];
 
 /* ---------- durations in minutes ---------- */
 const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-const grossMin = (s) => { let d = toMin(s.end) - toMin(s.start); if (d <= 0) d += 1440; return d; };
-const shiftMin = (s) => Math.max(0, grossMin(s) - (Number(s.breakMin) || 0));
+// A shift keeps its scheduled start/end/breakMin; once clocked (or typed in) it also carries actual = {start, end, breakMin}.
+// Weekly totals, limits and pay use the actual times when they exist (W), the schedule otherwise.
+const hasActual = (s) => !!(s && s.actual && isTime(s.actual.start) && isTime(s.actual.end));
+const W = (s) => (hasActual(s) ? s.actual : s);
+const grossMin = (s) => { const w = W(s); let d = toMin(w.end) - toMin(w.start); if (d < 0 || (d === 0 && w === s)) d += 1440; return d; };
+const shiftMin = (s) => Math.max(0, grossMin(s) - (Number(W(s).breakMin) || 0));
+const plan = (s) => ({ start: s.start, end: s.end, breakMin: s.breakMin }); // the scheduled part only
 const isOvernight = (s) => toMin(s.end) <= toMin(s.start);
+const hmOf = (ts) => { const d = new Date(ts); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const minOf = (ts) => Math.floor(ts / 60000);
 const fmtH = (min) => { const neg = min < 0; min = Math.round(Math.abs(min)); const h = Math.floor(min / 60), m = min % 60; return (neg ? '−' : '') + h + 'h' + (m ? pad(m) : ''); };
 const yen = (n) => '¥' + Math.round(n).toLocaleString('ja-JP');
 
@@ -550,6 +573,10 @@ const I = {
   arrow: svg('<path d="M5 12h14M13 6l6 6-6 6"/>', 2.2),
   down: svg('<path d="M6 9l6 6 6-6"/>', 2.2),
   pencil: svg('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>'),
+  clockIn: svg('<path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M4 12h11M11 8l4 4-4 4"/>'),
+  clockOut: svg('<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M9 12h11M16 8l4 4-4 4"/>'),
+  coffee: svg('<path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM16 10.5h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5v2.5M12 3.5v2.5"/>'),
+  play: svg('<path d="M8 5.5v13l10-6.5z"/>'),
   today: svg('<rect x="3.5" y="5" width="17" height="15.5" rx="4"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none"/>'),
 };
 
@@ -660,7 +687,7 @@ function wageOf(shop, kind) { // empty weekend wage = weekday wage; empty holida
 }
 const nightPctOf = (shop) => (shop.nightPct === undefined || shop.nightPct === null || shop.nightPct === '' ? 25 : Number(shop.nightPct) || 0);
 function nightMinOf(s) { // minutes between 22:00 and 05:00, counted from the shift's start day
-  const a = toMin(s.start), b = a + grossMin(s);
+  const a = toMin(W(s).start), b = a + grossMin(s);
   let n = 0;
   for (const [x, y] of [[0, 300], [1320, 1740], [2760, 3180]]) n += Math.max(0, Math.min(b, y) - Math.max(a, x));
   return n;
@@ -778,10 +805,13 @@ function weekStrip(ws) {
 }
 function shiftCard(s, os) {
   const t = todayStr(), over = !!(os && os.has(s.id)), shop = shopById(s.shopId), p = shiftPay(s, shop || {});
-  const state = [s.date > t ? 'Dự kiến' : s.date === t ? 'Hôm nay' : 'Đã làm'];
+  const ps = punchState(s), act = hasActual(s);
+  const state = [ps ? 'Đang làm' : act ? 'Đã chấm công' : s.date > t ? 'Dự kiến' : s.date === t ? 'Hôm nay' : 'Đã làm'];
   if (holidayName(s.date)) state.push('Ngày lễ');
   if (p.night) state.push(`đêm ${fmtH(p.night)}`);
-  const tags = (over ? '<span class="tag red">Vượt giới hạn</span>' : '') + (s.sample ? '<span class="tag">Mẫu</span>' : '');
+  const tags = (over ? '<span class="tag red">Vượt giới hạn</span>' : '') + (ps ? `<span class="tag live">${ps === 'break' ? 'Đang nghỉ' : 'Đang trong ca'}</span>` : '')
+    + (act && s.actual.auto ? '<span class="tag live">Quên ra ca · tính theo lịch</span>' : '')
+    + (act ? `<span class="tag ok">Thực ${esc(s.actual.start)}–${esc(s.actual.end)}${Number(s.actual.breakMin) ? ` · nghỉ ${Number(s.actual.breakMin)}′` : ''}${diffText(s)}</span>` : '') + (s.sample ? '<span class="tag">Mẫu</span>' : '');
   return `<div class="swipe"><button class="swipe-del" data-act="swipe-del" data-id="${esc(s.id)}" aria-label="Xoá ca">${I.trash}<span>Xoá</span></button>
     <button class="shift ${over ? 'over' : ''}" data-act="edit" data-id="${esc(s.id)}">
       <span class="thumb"><b>${s.date.slice(8)}</b><small>${DOW[dowOf(s.date)]}</small></span>
@@ -796,19 +826,86 @@ function untilText(min) {
   const h = Math.floor(min / 60), m = min % 60;
   return h ? `${h} giờ${m ? ` ${m} phút` : ''}` : `${m} phút`;
 }
-function nextShift() { // the shift in progress, or the next one to start
-  const now = new Date(), t = todayStr(), nowMin = now.getHours() * 60 + now.getMinutes();
-  const list = allShifts().filter((s) => s.date >= addDays(t, -1)).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
-  for (const s of list) {
-    const start = daysBetween(t, s.date) * 1440 + toMin(s.start), end = start + grossMin(s);
-    if (end > nowMin) return { s, start, end, nowMin, live: start <= nowMin };
+/* ---------- time clock: 出勤 / 休憩 / 退勤 on a scheduled shift ----------
+   While clocked in a shift carries punch = {in, breaks:[{s, e?}]} (epoch ms). Clocking out turns it into actual = {start, end, breakMin}. */
+const PUNCH_EARLY = 120; // the clock-in button shows up this many minutes before the scheduled start
+function punchState(s) {
+  const p = s && s.punch;
+  if (!p || !Number.isFinite(p.in)) return '';
+  const b = p.breaks || [];
+  return b.length && !Number.isFinite(b[b.length - 1].e) ? 'break' : 'work';
+}
+function punchTally(p, now = Date.now()) { // whole minutes, counted from the minute shown on the clock
+  const brk = (p.breaks || []).reduce((a, b) => a + Math.max(0, minOf(Number.isFinite(b.e) ? b.e : now) - minOf(b.s)), 0);
+  const gross = Math.max(0, minOf(now) - minOf(p.in));
+  return { gross, brk, net: Math.max(0, gross - brk) };
+}
+const planMin = (s) => shiftMin(plan(s));
+const AUTO_OUT_AFTER = 6 * 60; // a clock left running this long past the scheduled end is closed at the scheduled end
+function planEndTs(s) { const [y, m, d] = s.date.split('-').map(Number); return new Date(y, m - 1, d, 0, 0).getTime() + (toMin(s.start) + grossMin(plan(s))) * 60000; }
+function autoClosed(s) { // forgot 退勤: keep the real clock-in, end at the scheduled time; clocked in after the schedule ended → back to the schedule
+  const out = clone(s), end = planEndTs(s);
+  delete out.punch;
+  if (s.punch.in < end) out.actual = { start: hmOf(s.punch.in), end: s.end, breakMin: punchTally(s.punch, end).brk, auto: true };
+  return out;
+}
+function sweepForgotten(force = null) { // close stale clocks; force = a shift id whose clock should close now if its schedule has ended
+  const now = Date.now(), keys = [], done = [];
+  for (const s of allShifts()) {
+    if (!punchState(s)) continue;
+    const end = planEndTs(s);
+    if (now - end > AUTO_OUT_AFTER * 60000 || (s.id === force && now > end)) { putShift(autoClosed(s), keys); done.push(s); }
   }
-  return null;
+  if (!done.length) return 0;
+  commit(keys);
+  toast(done.length === 1 ? `Ca ${fmtDM(done[0].date)} ở ${shopName(done[0].shopId)} quên ra ca: đã tính giờ ra theo lịch ${done[0].end}` : `${done.length} ca quên ra ca: đã tính giờ ra theo lịch`);
+  return done.length;
+}
+const fmtShort = (m) => (Math.abs(m) >= 60 ? fmtH(Math.abs(m)) : Math.abs(m) + '′');
+function diffText(s) { // actual vs schedule, e.g. " (+10′)"
+  const d = shiftMin(s) - planMin(s);
+  return d ? ` (${d > 0 ? '+' : '−'}${fmtShort(d)})` : '';
+}
+function nextShift() { // the clocked-in shift, else the shift in progress or the next one to start
+  const now = new Date(), t = todayStr(), nowMin = now.getHours() * 60 + now.getMinutes();
+  const at = (s) => { const start = daysBetween(t, s.date) * 1440 + toMin(s.start); return { start, end: start + grossMin(plan(s)) }; };
+  const clocked = allShifts().find((s) => punchState(s));
+  const list = allShifts().filter((s) => s.date >= addDays(t, -1) && !hasActual(s) && !punchState(s)).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+  let upcoming = null;
+  for (const s of list) {
+    const { start, end } = at(s);
+    if (end > nowMin) { upcoming = { s, start, end, nowMin, live: start <= nowMin }; break; }
+  }
+  // a clock still running past its schedule gives way to the next shift once that one can be clocked in (clocking in closes the old one)
+  if (clocked && !(Date.now() > planEndTs(clocked) && upcoming && upcoming.start - nowMin <= PUNCH_EARLY)) return { s: clocked, ...at(clocked), nowMin, live: true };
+  return upcoming;
+}
+function punchPanel(n) {
+  const { s } = n, st = punchState(s), id = esc(s.id), planNet = planMin(s);
+  if (!st) {
+    if (n.start - n.nowMin > PUNCH_EARLY) return '';
+    const late = n.nowMin - n.start;
+    return `<div class="punch"><div class="punch-row"><span class="punch-f">${late > 0 ? `Đã qua giờ vào ${late >= 60 ? fmtH(late) : late + ' phút'}` : `Vào ca lúc ${esc(s.start)} · bấm khi bắt đầu làm`}</span></div>
+      <button class="cta dark block" data-act="punch" data-k="in" data-id="${id}">${I.clockIn}Vào ca <span class="ja" style="color:inherit;opacity:.7">出勤</span></button></div>`;
+  }
+  const p = s.punch, tl = punchTally(p), b = p.breaks || [], lastB = b[b.length - 1];
+  const overrun = n.nowMin - n.end;
+  const foot = [`Vào ${hmOf(p.in)}`];
+  if (tl.brk) foot.push(`nghỉ ${tl.brk}′`);
+  foot.push(`ra ca dự kiến ${esc(s.end)}`);
+  const warn = overrun > 60 ? `<p class="punch-f warn">Đã quá giờ ra ca ${fmtH(overrun)}. Quên bấm? Nếu không bấm, sau ${fmtH(AUTO_OUT_AFTER)} app tự tính giờ ra theo lịch (${esc(s.end)}).</p>` : '';
+  const big = st === 'break'
+    ? `<div class="punch-big"><b>${minOf(Date.now()) - minOf(lastB.s)}′</b><span>đang nghỉ từ ${hmOf(lastB.s)}</span></div><span class="punch-st brk"><i></i>休憩中</span>`
+    : `<div class="punch-big"><b>${fmtH(tl.net)}</b><span>/ ${fmtH(planNet)} dự kiến</span></div><span class="punch-st"><i></i>勤務中</span>`;
+  const btns = st === 'break'
+    ? `<button class="cta dark" data-act="punch" data-k="brk-end" data-id="${id}">${I.play}Hết nghỉ</button><button class="cta white" data-act="punch" data-k="out" data-id="${id}">${I.clockOut}Ra ca</button>`
+    : `<button class="cta white" data-act="punch" data-k="brk" data-id="${id}">${I.coffee}Nghỉ <span class="ja">休憩</span></button><button class="cta dark" data-act="punch" data-k="out" data-id="${id}">${I.clockOut}Ra ca <span class="ja" style="color:inherit;opacity:.7">退勤</span></button>`;
+  return `<div class="punch"><div class="punch-row">${big}</div><p class="punch-f">${foot.join(' · ')}</p>${warn}<div class="btn-row">${btns}</div></div>`;
 }
 function nextCard() {
   const n = nextShift();
   if (!n) return '';
-  const { s } = n, shop = shopById(s.shopId) || {}, p = shiftPay(s, shop);
+  const { s } = n, shop = shopById(s.shopId) || {}, p = shiftPay(s, shop), st = punchState(s);
   const firstOfDay = !allShifts().some((x) => x.id !== s.id && x.shopId === s.shopId && x.date === s.date && x.start < s.start);
   const money = p.total ? p.total + (firstOfDay ? Number(shop.transport) || 0 : 0) : 0;
   const chips = [];
@@ -816,11 +913,13 @@ function nextCard() {
   if (Number(s.breakMin)) chips.push(`${I.hourglass}Nghỉ ${Number(s.breakMin)}′`);
   if (p.night) chips.push(`${I.moon}Đêm ${fmtH(p.night)}`);
   if (holidayName(s.date)) chips.push(`${I.cal}${esc(holidayName(s.date))}`);
-  return `<div class="sec"><h2>Ca tiếp theo</h2><span class="muted" style="font-size:14px">${n.live ? `đang làm · còn ${untilText(n.end - n.nowMin)}` : `bắt đầu sau ${untilText(n.start - n.nowMin)}`}</span></div>
-    <button class="next press" data-act="edit" data-id="${esc(s.id)}">
-      <span class="next-top"><span class="thumb"><b>${Number(s.date.slice(8))}</b><small>${DOW[dowOf(s.date)]}</small></span>
-        <span class="next-main"><small>${DOW_LONG[dowOf(s.date)]}, ${fmtDM(s.date)}</small><b>${esc(shopName(s.shopId))}</b><span>${esc(s.start)} – ${esc(s.end)} · ${fmtH(shiftMin(s))} làm việc</span></span></span>
-      <span class="next-foot"><span class="chips-s">${chips.map((c) => `<span class="chip-s">${c}</span>`).join('')}</span><span class="go">${I.arrow}</span></span></button>`;
+  const sub = st === 'break' ? 'đang nghỉ giải lao' : st ? 'đã vào ca' : n.live ? `đã đến giờ · còn ${untilText(n.end - n.nowMin)}` : `bắt đầu sau ${untilText(n.start - n.nowMin)}`;
+  return `<div class="sec"><h2>${st ? 'Đang trong ca' : 'Ca tiếp theo'}</h2><span class="muted" style="font-size:14px">${sub}</span></div>
+    <div class="next">
+      <button class="next-top press" data-act="edit" data-id="${esc(s.id)}"><span class="thumb"><b>${Number(s.date.slice(8))}</b><small>${DOW[dowOf(s.date)]}</small></span>
+        <span class="next-main"><small>${DOW_LONG[dowOf(s.date)]}, ${fmtDM(s.date)}</small><b>${esc(shopName(s.shopId))}</b><span>${esc(s.start)} – ${esc(s.end)} · ${fmtH(planMin(s))} làm việc</span></span><span class="go">${I.arrow}</span></button>
+      ${chips.length ? `<span class="next-foot"><span class="chips-s">${chips.map((c) => `<span class="chip-s">${c}</span>`).join('')}</span></span>` : ''}
+      ${punchPanel(n)}</div>`;
 }
 
 function viewWeek() {
@@ -832,7 +931,9 @@ function viewWeek() {
     <div class="bar"><div class="switcher"><button class="arrow" data-act="wk-prev" aria-label="Tuần trước">${I.prev}</button>
       <div class="lbl-c"><b>${rel}${isVacWeek(ws) ? ' · kỳ nghỉ' : ''}</b><small>${fmtDM(ws)} – ${fmtDM(w.we)}</small></div>
       <button class="arrow" data-act="wk-next" aria-label="Tuần sau">${I.next}</button></div>${circ('add', I.plus, 'Thêm ca', 'dark')}</div>
-    ${weekStrip(ws)}${weekHero(w, rel)}`;
+    ${weekStrip(ws)}`;
+  const nc = diff === 0 ? nextCard() : '', urgent = nc.includes('class="punch"'); // time to clock: put the clock card above the hero
+  html += urgent ? nc + weekHero(w, rel) : weekHero(w, rel);
 
   if (w.status === 'over') {
     const over = w.total - w.limit, nws = addDays(ws, 7), nw = weekStats(nws);
@@ -853,7 +954,7 @@ function viewWeek() {
         <li>App cộng giờ, tính lương và báo đỏ khi tuần vượt ${fmtH(st.weekLimit * 60)}.</li></ol>
       <div class="btn-row"><button class="cta dark" data-act="shop-new">${I.plus}Thêm quán</button><button class="cta light" data-act="sample-load">Xem dữ liệu mẫu</button></div></section>`;
   }
-  if (diff === 0) html += nextCard();
+  if (nc && !urgent) html += nc;
 
   const list = weekShifts(ws), os = overIds(ws), pay = payTotal(list);
   const left = Math.max(0, w.limit - w.total);
@@ -1075,7 +1176,8 @@ function openShift(opts = {}) {
   const last = lastFor();
   const shopId = ex ? ex.shopId : shopById(opts.shopId) ? opts.shopId : last && shopById(last.shopId) ? last.shopId : (shops()[0] || {}).id || null;
   form = { id: ex ? ex.id : null, sample: !!(ex && ex.sample), shopId, date: ex ? ex.date : opts.date || defaultDate(),
-    start: '09:00', end: '13:00', breakMin: 0, note: ex ? ex.note || '' : '' };
+    start: '09:00', end: '13:00', breakMin: 0, note: ex ? ex.note || '' : '',
+    actual: ex && hasActual(ex) ? clone(ex.actual) : null, punch: ex && punchState(ex) ? clone(ex.punch) : null };
   if (ex) Object.assign(form, { start: ex.start, end: ex.end, breakMin: Number(ex.breakMin) || 0 });
   else applyShopDefaults(opts.presetId);
   openSheet(shiftSheetHTML());
@@ -1117,10 +1219,35 @@ function shiftSheetHTML() {
       <div class="g-row col"><span>Nghỉ giải lao <span class="ja">休憩</span></span><div id="sh-break">${breakSeg()}</div></div>
       <label class="g-row"><span>Ghi chú</span><input id="sh-note" class="in-r" type="text" maxlength="200" placeholder="Không bắt buộc" value="${esc(form.note)}"></label>
     </div></div>
+    <div id="sh-actual">${actualSect()}</div>
     <div id="sh-preview" class="preview" aria-live="polite"></div>
     <p id="sh-err" class="err" hidden></p>
     ${form.id ? `<div class="group"><button class="g-row center" data-act="sh-dup">${I.repeat}Chép sang +7 ngày</button><button class="g-row center danger" data-act="sh-del">${I.trash}Xoá ca</button></div>` : ''}
   </div>${sheetFoot('sh-save', form.id ? 'Lưu thay đổi' : 'Lưu ca')}`;
+}
+function actualSect() { // real clock times: live status while clocked in, editable times afterwards
+  const head = '<p class="sect-h">Giờ thực làm <span class="ja">実績</span></p>';
+  if (form.punch) {
+    const tl = punchTally(form.punch);
+    return `<div class="sect">${head}<div class="group">
+      <div class="g-row"><span>Đã vào ca lúc</span><b class="t" style="font-weight:600">${hmOf(form.punch.in)}</b></div>
+      <div class="g-row"><span>Đã làm${tl.brk ? ` · nghỉ ${tl.brk}′` : ''}</span><b class="t" style="font-weight:600">${fmtH(tl.net)}</b></div>
+      <button class="g-row center" data-act="punch" data-k="out" data-id="${esc(form.id)}">${I.clockOut}Ra ca ngay</button>
+      <button class="g-row center danger" data-act="punch" data-k="cancel" data-id="${esc(form.id)}">${I.x}Huỷ chấm công</button></div>
+      <p class="sect-f">Đang trong ca. Bấm Ra ca ở đây hoặc ở Trang chủ khi xong việc.</p></div>`;
+  }
+  if (!form.actual) {
+    if (!isDate(form.date) || form.date > todayStr()) return '';
+    return `<div class="sect">${head}<button class="add-row" data-act="sh-actual-add">${I.plus}Nhập giờ thực tế</button>
+      <p class="sect-f">Khi đến ca, bấm Vào ca / Nghỉ / Ra ca ở Trang chủ để app tự ghi. Quên bấm thì nhập tay ở đây.</p></div>`;
+  }
+  const a = form.actual;
+  return `<div class="sect">${head}<div class="group">
+    <label class="g-row"><span>Vào thực tế</span><input id="sh-astart" class="in-pill" type="time" value="${esc(a.start)}"></label>
+    <label class="g-row"><span>Ra thực tế</span><input id="sh-aend" class="in-pill" type="time" value="${esc(a.end)}"></label>
+    <label class="g-row"><span>Nghỉ thực tế</span><span class="in-unit"><input id="sh-abreak" class="in-r" type="number" inputmode="numeric" min="0" max="480" step="1" value="${Number(a.breakMin) || 0}"><em>phút</em></span></label>
+    <button class="g-row center danger" data-act="sh-actual-rm">${I.trash}Xoá giờ thực tế</button></div>
+    <p class="sect-f">${a.auto ? 'Hôm đó quên bấm Ra ca nên giờ ra lấy theo lịch. Sửa lại nếu bạn về sớm hoặc muộn hơn. ' : ''}Tổng giờ tuần và lương tính theo giờ thực tế này thay cho giờ đã xếp.</p></div>`;
 }
 function syncShiftForm() { // after a shop or saved-shift tap: refresh chips, time fields and the preview
   $('#sh-shops').innerHTML = shopChips();
@@ -1135,19 +1262,26 @@ function shiftErr() {
   if (!isDate(form.date)) return 'Chọn ngày làm.';
   if (!isTime(form.start) || !isTime(form.end)) return 'Nhập giờ vào và giờ ra.';
   if (form.start === form.end) return 'Giờ vào và giờ ra đang trùng nhau.';
-  if (shiftMin(form) <= 0) return 'Thời gian nghỉ dài hơn cả ca làm.';
+  if (planMin(form) <= 0) return 'Thời gian nghỉ dài hơn cả ca làm.';
+  if (form.actual) {
+    const a = form.actual;
+    if (!isTime(a.start) || !isTime(a.end)) return 'Nhập đủ giờ vào và giờ ra thực tế, hoặc xoá giờ thực tế.';
+    if (a.start === a.end) return 'Giờ vào và giờ ra thực tế đang trùng nhau.';
+    if (shiftMin(form) <= 0) return 'Thời gian nghỉ thực tế dài hơn cả ca làm.';
+  }
   return '';
 }
 function updatePreview() {
   const box = $('#sh-preview'); if (!box || !form) return;
   const sub = $('#sh-sub'); if (sub) sub.textContent = dayLabel(form.date);
   if (!isDate(form.date) || !isTime(form.start) || !isTime(form.end) || form.start === form.end) { box.innerHTML = '<span class="muted">Nhập ngày và giờ để xem ca này ảnh hưởng thế nào đến tuần.</span>'; return; }
-  const net = shiftMin(form), gross = grossMin(form);
+  const net = planMin(form), gross = grossMin(plan(form));
   const others = allShifts().filter((s) => s.id !== form.id);
   const day = buildIndex([...others, { ...form, id: '_new' }]).day;
   const ws = weekStartOf(form.date), lim = weekLimitMin(ws);
   const before = sumRange(buildIndex(others).day, ws, 7), after = sumRange(day, ws, 7);
   const lines = [`<div class="pv-big"><b>${fmtH(net)}</b><span class="muted">làm việc${form.breakMin ? ` · nghỉ ${form.breakMin} phút` : ''}${isOvernight(form) ? ' · qua đêm, ra ca ngày hôm sau' : ''}</span></div>`];
+  if (hasActual(form) && form.actual.start !== form.actual.end) lines.push(`<div class="pv-line ok">${I.clock}<span>Thực làm <b>${fmtH(shiftMin(form))}</b>${diffText(form) ? ` · ${shiftMin(form) > planMin(form) ? 'hơn' : 'ít hơn'} lịch ${fmtShort(shiftMin(form) - planMin(form))}` : ' · đúng như lịch'}</span></div>`);
   const stt = statusOf(after, lim);
   lines.push(`<div class="pv-line ${stt}">${stt === 'ok' ? I.ok : I.warn}<span>Tuần ${fmtDM(ws)} – ${fmtDM(addDays(ws, 6))}: ${fmtH(before)} → <b>${fmtH(after)}</b> / ${fmtH(lim)}${stt === 'over' ? ` · vượt ${fmtH(after - lim)}` : stt === 'near' ? ` · còn ${fmtH(lim - after)}` : ''}</span></div>`);
   const shop = shopById(form.shopId), hol = holidayName(form.date);
@@ -1168,6 +1302,12 @@ function saveShift() {
   const keys = [];
   const shift = { id: form.id || newId(), shopId: form.shopId, date: form.date, start: form.start, end: form.end, breakMin: form.breakMin, note: form.note.trim() };
   if (form.sample) shift.sample = true;
+  if (form.actual) shift.actual = { start: form.actual.start, end: form.actual.end, breakMin: Math.max(0, Math.round(Number(form.actual.breakMin) || 0)), ...(form.actual.auto ? { auto: true } : {}) };
+  if (form.punch) { // keep a running clock; a punch made from Home while this sheet was open wins
+    const cur = allShifts().find((s) => s.id === form.id);
+    if (cur && punchState(cur)) shift.punch = clone(cur.punch);
+    else if (cur && hasActual(cur)) shift.actual = clone(cur.actual);
+  }
   putShift(shift, keys);
   closeSheet();
   if (ui.tab === 'month') ui.ym = shift.date.slice(0, 7); else { ui.tab = 'week'; ui.ws = weekStartOf(shift.date); saveUI(); }
@@ -1175,6 +1315,51 @@ function saveShift() {
   const w = weekStats(weekStartOf(shift.date));
   if (w.status === 'over') toast(`Đã lưu. Tuần ${fmtDM(w.ws)} vượt ${fmtH(w.total - w.limit)}!`, 'bad');
   else toast(`Đã lưu ${fmtH(shiftMin(shift))} · tuần ${fmtH(w.total)}/${fmtH(w.limit)}`);
+}
+function punchShift(id, kind) {
+  const cur = allShifts().find((x) => x.id === id);
+  if (!cur) return;
+  const before = clone(cur), s = clone(cur), now = Date.now(), st = punchState(s);
+  let msg = '', bad = false;
+  if (kind === 'in') {
+    if (st) return;
+    const other = allShifts().find((x) => x.id !== id && punchState(x));
+    if (other && Date.now() > planEndTs(other)) { sweepForgotten(other.id); return punchShift(id, kind); }
+    if (other) { toast(`Bạn đang trong ca ở ${shopName(other.shopId)}. Ra ca đó trước.`, 'bad'); return; }
+    s.punch = { in: now, breaks: [] }; delete s.actual;
+    msg = `Đã vào ca lúc ${hmOf(now)}`;
+  } else if (!st) return;
+  else if (kind === 'brk') {
+    if (st === 'break') return;
+    s.punch.breaks.push({ s: now });
+    msg = `Bắt đầu nghỉ lúc ${hmOf(now)}`;
+  } else if (kind === 'brk-end') {
+    if (st !== 'break') return;
+    const b = s.punch.breaks[s.punch.breaks.length - 1]; b.e = now;
+    msg = `Hết nghỉ · nghỉ ${Math.max(0, minOf(now) - minOf(b.s))} phút`;
+  } else if (kind === 'out') {
+    const b = s.punch.breaks[s.punch.breaks.length - 1];
+    if (b && !Number.isFinite(b.e)) b.e = now;
+    const tl = punchTally(s.punch, now);
+    if (tl.gross < 1) { toast('Vừa vào ca chưa đến 1 phút. Muốn bỏ thì chọn Huỷ chấm công trong ca.', 'bad'); return; }
+    s.actual = { start: hmOf(s.punch.in), end: hmOf(now), breakMin: tl.brk };
+    delete s.punch;
+    const d = shiftMin(s) - planMin(s);
+    msg = `Đã ra ca · thực làm ${fmtH(shiftMin(s))}${d ? ` (${d > 0 ? 'hơn' : 'ít hơn'} lịch ${fmtShort(d)})` : ''}`;
+  } else if (kind === 'cancel') {
+    delete s.punch; msg = 'Đã huỷ chấm công ca này';
+  } else return;
+  const keys = [];
+  putShift(s, keys);
+  if (!$('#sheet').hidden) closeSheet();
+  if (ui.tab !== 'week') { ui.tab = 'week'; saveUI(); }
+  ui.ws = weekStartOf(s.date);
+  commit(keys);
+  if (kind === 'out') {
+    const w = weekStats(weekStartOf(s.date));
+    if (w.status === 'over') { msg += ` · tuần vượt ${fmtH(w.total - w.limit)}!`; bad = true; }
+  }
+  toast(msg, bad ? 'bad' : '', { label: 'Hoàn tác', fn: () => { const k = []; putShift(before, k); commit(k); toast('Đã hoàn tác'); } });
 }
 function deleteShift(id) {
   const s = allShifts().find((x) => x.id === id);
@@ -1308,6 +1493,8 @@ function openDay(d) {
       <button class="g-row" data-act="edit" data-id="${esc(s.id)}"><span class="shift-shop"><i class="dot" style="background:${(shop && shop.color) || '#8E8E93'}"></i><span>${esc(shopName(s.shopId))}</span></span>${tag}<span class="li-end">${I.chev}</span></button>
       <div class="g-row"><span>Giờ làm</span><b class="t" style="font-weight:600">${esc(s.start)} – ${esc(s.end)}${isOvernight(s) ? ' (+1)' : ''}</b></div>
       <div class="g-row"><span>Nghỉ giải lao <span class="ja">休憩</span></span><b class="t" style="font-weight:600">${Number(s.breakMin) || 0} phút</b></div>
+      ${hasActual(s) ? `<div class="g-row"><span>Giờ thực làm <span class="ja">実績</span></span><b class="t" style="font-weight:600;color:var(--green-ink)">${esc(s.actual.start)} – ${esc(s.actual.end)}${Number(s.actual.breakMin) ? ` · nghỉ ${Number(s.actual.breakMin)}′` : ''}</b></div>`
+        : punchState(s) ? `<div class="g-row"><span>Giờ thực làm <span class="ja">実績</span></span><b class="t" style="font-weight:600;color:var(--amber-ink)">vào ${hmOf(s.punch.in)} · đang làm</b></div>` : ''}
       ${list.length > 1 ? `<div class="g-row"><span>Số giờ của ca</span><b class="t" style="font-weight:600">${fmtH(shiftMin(s))}</b></div>` : ''}
     </div>`;
   }).join('');
@@ -1390,7 +1577,14 @@ function importData(text) {
   askConfirm({ title: 'Nhập bản sao lưu?', text: `Tệp có ${shifts.length} ca và ${(o.config.shops || []).length} quán. Toàn bộ dữ liệu hiện tại sẽ được thay thế.`, ok: 'Thay thế', onOk: () => {
     const keys = Object.keys(docs);
     docs = { config: { shops: Array.isArray(o.config.shops) ? o.config.shops : [], settings: o.config.settings || {} } };
-    for (const s of shifts) { const k = mkey(s.date); (docs[k] || (docs[k] = { shifts: [] })).shifts.push({ id: s.id, shopId: s.shopId, date: s.date, start: s.start, end: s.end, breakMin: Number(s.breakMin) || 0, note: String(s.note || '').slice(0, 200), ...(s.sample ? { sample: true } : {}) }); }
+    for (const s of shifts) {
+      const k = mkey(s.date), a = s.actual, p = s.punch;
+      const extra = {};
+      if (s.sample) extra.sample = true;
+      if (a && isTime(a.start) && isTime(a.end)) extra.actual = { start: a.start, end: a.end, breakMin: Math.max(0, Number(a.breakMin) || 0), ...(a.auto ? { auto: true } : {}) };
+      else if (p && Number.isFinite(p.in)) extra.punch = { in: p.in, breaks: (Array.isArray(p.breaks) ? p.breaks : []).filter((b) => b && Number.isFinite(b.s)).map((b) => (Number.isFinite(b.e) ? { s: b.s, e: b.e } : { s: b.s })) };
+      (docs[k] || (docs[k] = { shifts: [] })).shifts.push({ id: s.id, shopId: s.shopId, date: s.date, start: s.start, end: s.end, breakMin: Number(s.breakMin) || 0, note: String(s.note || '').slice(0, 200), ...extra });
+    }
     _st = null; ui.ws = weekStartOf(todayStr());
     commit([...keys, ...Object.keys(docs)]); toast(`Đã nhập ${shifts.length} ca`);
   } });
@@ -1427,6 +1621,16 @@ const ACT = {
   'as-cancel': () => closeAS(),
   'toast-act': () => { const fn = toastAction; toastAction = null; $('#toast').className = 'toast'; if (fn) fn(); },
   'swipe-del': (el) => deleteShift(el.dataset.id),
+  punch: (el) => {
+    const id = el.dataset.id, k = el.dataset.k;
+    if (k === 'cancel') return actionSheet({ title: 'Huỷ chấm công?', message: 'Giờ vào ca vừa bấm sẽ bị bỏ, ca trở về giờ đã xếp.', actions: [{ label: 'Huỷ chấm công', danger: true, fn: () => punchShift(id, 'cancel') }] });
+    punchShift(id, k);
+  },
+  'sh-actual-add': () => {
+    form.actual = { start: isTime(form.start) ? form.start : '', end: isTime(form.end) ? form.end : '', breakMin: Number(form.breakMin) || 0 };
+    $('#sh-actual').innerHTML = actualSect(); $('#sh-err').hidden = true; updatePreview();
+  },
+  'sh-actual-rm': () => { form.actual = null; $('#sh-actual').innerHTML = actualSect(); $('#sh-err').hidden = true; updatePreview(); },
 
   'sh-shop': (el) => { form.shopId = el.dataset.id; if (!form.id) applyShopDefaults(); syncShiftForm(); },
   'sh-preset': (el) => {
@@ -1441,7 +1645,7 @@ const ACT = {
   'sh-del': () => { const id = form.id; actionSheet({ title: 'Xoá ca này?', message: 'Bạn có thể hoàn tác ngay sau khi xoá.', actions: [{ label: 'Xoá ca', danger: true, fn: () => deleteShift(id) }] }); },
   'sh-dup': () => {
     const src = allShifts().find((s) => s.id === form.id); if (!src) return;
-    const copy = { ...src, id: newId(), date: addDays(src.date, 7) }; delete copy.sample;
+    const copy = { ...src, id: newId(), date: addDays(src.date, 7) }; delete copy.sample; delete copy.actual; delete copy.punch;
     const keys = []; putShift(copy, keys); closeSheet();
     if (ui.tab === 'week') ui.ws = weekStartOf(copy.date);
     commit(keys); toast(`Đã chép sang ${DOW[dowOf(copy.date)]} ${fmtDM(copy.date)}`);
@@ -1547,8 +1751,16 @@ document.addEventListener('input', (e) => {
   else if (id === 'sh-start') form.start = el.value;
   else if (id === 'sh-end') form.end = el.value;
   else if (id === 'sh-note') { form.note = el.value; return; }
+  else if (form.actual && (id === 'sh-astart' || id === 'sh-aend' || id === 'sh-abreak')) {
+    delete form.actual.auto;
+    if (id === 'sh-astart') form.actual.start = el.value;
+    else if (id === 'sh-aend') form.actual.end = el.value;
+    else form.actual.breakMin = Math.max(0, Math.round(Number(el.value) || 0));
+    $('#sh-err').hidden = true; updatePreview(); return;
+  }
   else return;
   $('#sh-err').hidden = true;
+  if (id === 'sh-date' && !form.actual && !form.punch) $('#sh-actual').innerHTML = actualSect();
   if (id !== 'sh-date') $('#sh-presets').innerHTML = presetChips();
   updatePreview();
 });
@@ -1563,12 +1775,18 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { if (!$('#as').hidden) closeAS(); else if (!$('#sheet').hidden) closeSheet(); }
   if (e.key === 'Enter' && e.target.tagName === 'INPUT' && !$('#sheet').hidden) { const btn = $('#sheet-body .sheet-cta'); if (btn) { e.preventDefault(); btn.click(); } }
 });
-document.addEventListener('visibilitychange', () => { if (!document.hidden && $('#sheet').hidden) render(); });
-setInterval(() => { if (!document.hidden && $('#sheet').hidden && $('#as').hidden && ui.tab === 'week' && !document.querySelector('.swipe.open')) render(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && $('#sheet').hidden && !sweepForgotten()) render(); });
+let tick = 0; // every 15 s while clocked in (live timer), every minute otherwise
+setInterval(() => {
+  tick++;
+  if (document.hidden || !$('#sheet').hidden || !$('#as').hidden || ui.tab !== 'week' || document.querySelector('.swipe.open')) return;
+  if (tick % 4 === 0 || allShifts().some((s) => punchState(s))) { if (!sweepForgotten()) render(); }
+}, 15000);
 
 /* ---------- boot ---------- */
 loadLocal();
 render();
+sweepForgotten();
 try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
 })();
 </script>

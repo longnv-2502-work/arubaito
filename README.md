@@ -4,6 +4,7 @@
 
 - Tab **Quán**: lưu thông tin quán một lần (tên, 時給, địa chỉ, số điện thoại, ghi chú) cùng các **ca thường làm** (ví dụ Ca sáng 09:00–13:00).
 - Thêm ca: chọn quán, chạm vào ca thường làm, chọn ngày là xong. Vẫn sửa được giờ vào (出勤), giờ ra (退勤), thời gian nghỉ (休憩); ca qua đêm cũng được.
+- **Chấm công theo ca đã xếp**: đến ca, ở Trang chủ bấm **Vào ca 出勤**, **Nghỉ 休憩** / **Hết nghỉ**, rồi **Ra ca 退勤**. App ghi giờ thực làm (thẻ “Đang trong ca” hiện đồng hồ chạy, nút vào ca xuất hiện từ 2 tiếng trước giờ vào). Tổng giờ tuần, cảnh báo và lương dùng giờ thực khi đã có, ca chưa chấm dùng giờ đã xếp. Không bấm Vào ca thì ca tính theo giờ đã xếp. Đã vào ca mà quên Ra ca thì sau 6 tiếng quá giờ ra (hoặc khi bấm vào ca kế tiếp) app tự lấy giờ ra theo lịch và gắn nhãn “Quên ra ca”. Mở ca để nhập hoặc sửa giờ thực tế bất cứ lúc nào; mỗi lần bấm đều có Hoàn tác.
 - Tự cộng giờ theo **tuần** và **tháng**, chia theo từng quán.
 - **Lương dự tính** theo từng quán: 時給 ngày thường, T7/CN và ngày lễ (ngày lễ Nhật 祝日 được nhận tự động, kể cả 振替休日), phụ cấp làm đêm 22:00–5:00 (mặc định +25%), tiền tàu theo số ngày đi làm. Tính theo kỳ chốt lương (締め日) và hiện ngày nhận lương (給料日) của từng quán. Số tiền là trước thuế.
 - **Dự trù tháng**: giới hạn tuần × số ngày trong tháng ÷ 7 (ví dụ 28h × 31 ÷ 7 = 124h), còn bao nhiêu giờ và trung bình mỗi ngày còn lại. Không giới hạn số giờ mỗi ngày.
