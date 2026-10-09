@@ -34,6 +34,10 @@
   --r-xl:30px; --r-l:24px; --r-m:18px;
   --tab-gap:max(12px, calc(env(safe-area-inset-bottom, 0px) - 12px));
 }
+/* CJK text falls back past Onest to a system font of the right script */
+html[lang="ja"]{--f:"Onest", -apple-system, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", Meiryo, sans-serif}
+html[lang="zh"]{--f:"Onest", -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif}
+html[lang="ko"]{--f:"Onest", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif}
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0E0E0F; --card:#1B1C1E; --fill:#26272A; --fill-2:#323337;
@@ -72,6 +76,7 @@ svg{flex:none}
 .stack{display:flex;flex-direction:column;gap:14px;padding-block:14px 28px}
 .stack-s{display:flex;flex-direction:column;gap:10px}
 .ja{font-weight:400;font-size:.82em;color:var(--ink-3)}
+html[lang="ja"] .ja{display:none} /* the Japanese hint would just repeat the label */
 .muted{color:var(--ink-2)}
 .t{font-variant-numeric:tabular-nums}
 .press:active,.pill:active,.circle:active,.day:active,.tab:active,.cta:active,.chip:active{transform:scale(.96)}
@@ -392,7 +397,7 @@ svg{flex:none}
 .tab svg{width:25px;height:25px}
 .tl{max-width:0;opacity:0;overflow:hidden;white-space:nowrap;font-size:15.5px;font-weight:600;transition:max-width .3s cubic-bezier(.2,.8,.2,1),opacity .2s ease,margin .3s ease}
 .tab.on{background:var(--tab-on);color:var(--tab-on-ink);padding:0 22px 0 18px}
-.tab.on .tl{max-width:96px;opacity:1;margin-left:9px}
+.tab.on .tl{max-width:110px;opacity:1;margin-left:9px}
 .tab.badged .ti::after{content:"";position:absolute;top:-3px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px var(--tabbar)}
 .tab.on.badged .ti::after{box-shadow:0 0 0 2px var(--tab-on)}
 
@@ -516,14 +521,422 @@ const addDays = (s, n) => { const d = parseD(s); d.setDate(d.getDate() + n); ret
 const daysBetween = (a, b) => Math.round((parseD(b) - parseD(a)) / 86400000);
 const todayStr = () => ymd(new Date());
 const dowOf = (s) => parseD(s).getDay();
-const fmtDM = (s) => `${s.slice(8, 10)}/${s.slice(5, 7)}`;
+const fmtDM = (s) => (LI === 0 ? `${s.slice(8, 10)}/${s.slice(5, 7)}` : `${Number(s.slice(5, 7))}/${Number(s.slice(8, 10))}`); // vi: dd/mm, others: m/d
+const fmtDMY = (s) => (LI === 0 ? `${fmtDM(s)}/${s.slice(0, 4)}` : `${s.slice(0, 4)}/${fmtDM(s)}`);
+const longDay = (d) => (LI <= 1 ? `${DOW_LONG[dowOf(d)]}, ${fmtDM(d)}` : LI === 3 ? `${fmtDM(d)} ${DOW_LONG[dowOf(d)]}` : `${fmtDM(d)} (${DOW[dowOf(d)]})`);
 const daysInMonth = (ym) => { const [y, m] = ym.split('-').map(Number); return new Date(y, m, 0).getDate(); };
 const addMonths = (ym, n) => { const [y, m] = ym.split('-').map(Number); const d = new Date(y, m - 1 + n, 1, 12); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
 const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || '') && !isNaN(parseD(s));
 const isTime = (s) => /^\d{2}:\d{2}$/.test(s || '');
-const DOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-const DOW_LONG = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-const DOW_JA = ['日', '月', '火', '水', '木', '金', '土'];
+/* ---------- languages: every string is [vi, en, ja, zh, ko]; functions take the values to fill in ---------- */
+const LANGS = ['vi', 'en', 'ja', 'zh', 'ko'];
+const LANG_NAMES = ['Tiếng Việt', 'English', '日本語', '简体中文', '한국어'];
+const EN_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const DOWS = [
+  ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+  ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+  ['日', '月', '火', '水', '木', '金', '土'],
+  ['日', '一', '二', '三', '四', '五', '六'],
+  ['일', '월', '화', '수', '목', '금', '토'],
+];
+const DOWS_LONG = [
+  ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'],
+  ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+  ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'],
+  ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
+  ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'],
+];
+let LI = 0, DOW = DOWS[0], DOW_LONG = DOWS_LONG[0];
+const dot = (...x) => x.filter(Boolean).join(' · ');
+const STR = {
+  appName: ['Sổ giờ Arubaito', 'Arubaito Hours', 'バイト時間メモ', '打工工时本', '알바 시간 기록'],
+  nav: ['Điều hướng', 'Navigation', 'ナビゲーション', '导航', '탐색'],
+  tab_week: ['Trang chủ', 'Home', 'ホーム', '首页', '홈'],
+  tab_month: ['Lịch làm', 'Schedule', 'シフト表', '排班', '근무표'],
+  tab_shops: ['Quán', 'Jobs', 'バイト先', '店铺', '알바처'],
+  tab_settings: ['Cài đặt', 'Settings', '設定', '设置', '설정'],
+  deletedShop: ['Quán đã xoá', 'Deleted job', '削除したバイト先', '已删除的店铺', '삭제된 알바처'],
+  dk_wd: ['Ngày thường', 'Weekday', '平日', '工作日', '평일'],
+  dk_wkd: ['T7, CN', 'Sat, Sun', '土日', '周六日', '토·일'],
+  dk_hol: ['Ngày lễ 祝日', 'Holiday 祝日', '祝日', '节假日 祝日', '공휴일 祝日'],
+  payCycle: (cd, pd, pm) => [
+    dot(cd ? `Chốt ngày ${cd}` : 'Chốt cuối tháng', pd && `nhận ngày ${pd} ${pm === 0 ? 'cùng tháng' : 'tháng sau'}`),
+    dot(cd ? `Cutoff on day ${cd}` : 'Cutoff at month end', pd && `paid on day ${pd} of ${pm === 0 ? 'the same' : 'the next'} month`),
+    dot(cd ? `${cd}日締め` : '月末締め', pd && `${pm === 0 ? '当月' : '翌月'}${pd}日払い`),
+    dot(cd ? `每月${cd}日截止` : '月底截止', pd && `${pm === 0 ? '当月' : '次月'}${pd}日发薪`),
+    dot(cd ? `매월 ${cd}일 마감` : '말일 마감', pd && `${pm === 0 ? '당월' : '익월'} ${pd}일 지급`),
+  ],
+  greet: (i) => [
+    ['Chào buổi sáng', 'Chào buổi trưa', 'Chào buổi chiều', 'Chào buổi tối'][i],
+    ['Good morning', 'Good afternoon', 'Good afternoon', 'Good evening'][i],
+    ['おはようございます', 'こんにちは', 'こんにちは', 'こんばんは'][i],
+    ['早上好', '中午好', '下午好', '晚上好'][i],
+    ['좋은 아침이에요', '안녕하세요', '안녕하세요', '좋은 저녁이에요'][i],
+  ],
+  sampleTitle: ['Đang xem dữ liệu mẫu', 'You’re viewing sample data', 'サンプルデータを表示中', '正在查看示例数据', '샘플 데이터를 보고 있어요'],
+  sampleBody: ['Quán và ca có nhãn “Mẫu” chỉ để bạn thử. Xoá đi rồi nhập lịch thật của bạn.', 'Jobs and shifts tagged “Sample” are just for trying things out. Clear them, then enter your real schedule.', '「サンプル」ラベルのバイト先とシフトはお試し用です。削除してから実際のシフトを入力してください。', '带“示例”标签的店铺和班次仅供试用。清除后再输入你的真实排班。', '‘샘플’ 표시가 있는 알바처와 근무는 체험용이에요. 지운 뒤 실제 근무를 입력하세요.'],
+  sampleTag: ['Mẫu', 'Sample', 'サンプル', '示例', '샘플'],
+  sampleClear: ['Xoá dữ liệu mẫu', 'Clear sample data', 'サンプルデータを削除', '清除示例数据', '샘플 데이터 삭제'],
+  sampleLoad: ['Xem dữ liệu mẫu', 'Try sample data', 'サンプルを見る', '查看示例数据', '샘플 데이터 보기'],
+  sampleLoadLong: ['Nạp dữ liệu mẫu để xem thử', 'Load sample data to try it out', 'サンプルデータを読み込んで試す', '载入示例数据试用', '샘플 데이터로 체험하기'],
+  st_ok: ['An toàn', 'Safe', '余裕あり', '安全', '안전'],
+  st_near: ['Sắp chạm giới hạn', 'Near the limit', '上限間近', '接近上限', '한도 임박'],
+  st_over: ['Vượt giới hạn', 'Over the limit', '上限超過', '超出上限', '한도 초과'],
+  heroOver: (x) => [`vượt ${x}`, `${x} over`, `${x}超過`, `超出 ${x}`, `${x} 초과`],
+  heroLeft: (x, l) => [`còn ${x} trước khi chạm ${l}`, `${x} left before ${l}`, `${l}まであと${x}`, `距 ${l} 还剩 ${x}`, `${l}까지 ${x} 남음`],
+  heroTotal: ['Tổng giờ làm trong tuần', 'Hours worked this week', '今週の労働時間', '本周工时合计', '이번 주 근무 시간'],
+  ofX: (a, b) => [`${a} trên ${b}`, `${a} of ${b}`, `${b}中${a}`, `${a} / ${b}`, `${b} 중 ${a}`],
+  seeMonth: ['Xem cả tháng', 'See the whole month', '月全体を見る', '查看整月', '한 달 전체 보기'],
+  holShort: ['Lễ', 'Hol', '祝', '节', '공휴'],
+  s_live: ['Đang làm', 'Working now', '勤務中', '工作中', '근무 중'],
+  s_clocked: ['Đã chấm công', 'Clocked', '打刻済み', '已打卡', '기록 완료'],
+  s_planned: ['Dự kiến', 'Scheduled', '予定', '计划', '예정'],
+  s_today: ['Hôm nay', 'Today', '今日', '今天', '오늘'],
+  s_done: ['Đã làm', 'Worked', '勤務済み', '已完成', '근무 완료'],
+  s_hol: ['Ngày lễ', 'Holiday', '祝日', '节假日', '공휴일'],
+  nightX: (x) => [`đêm ${x}`, `night ${x}`, `深夜${x}`, `夜班 ${x}`, `야간 ${x}`],
+  NightX: (x) => [`Đêm ${x}`, `Night ${x}`, `深夜${x}`, `夜班 ${x}`, `야간 ${x}`],
+  tagOnBreak: ['Đang nghỉ', 'On break', '休憩中', '休息中', '휴게 중'],
+  tagInShift: ['Đang trong ca', 'On shift', '勤務中', '上班中', '근무 중'],
+  tagForgot: ['Quên ra ca · tính theo lịch', 'Forgot to clock out · used schedule', '退勤忘れ・予定で計算', '忘记下班打卡 · 按排班计算', '퇴근 누락 · 예정대로 계산'],
+  actualX: (a, b) => [`Thực ${a}–${b}`, `Actual ${a}–${b}`, `実績 ${a}–${b}`, `实际 ${a}–${b}`, `실제 ${a}–${b}`],
+  brkX: (n) => [` · nghỉ ${n}′`, ` · break ${n}′`, ` · 休憩${n}′`, ` · 休息 ${n}′`, ` · 휴게 ${n}′`],
+  brkM: (n) => [`nghỉ ${n}′`, `break ${n}′`, `休憩${n}′`, `休息 ${n}′`, `휴게 ${n}′`],
+  BrkM: (n) => [`Nghỉ ${n}′`, `Break ${n}′`, `休憩${n}′`, `休息 ${n}′`, `휴게 ${n}′`],
+  delShift: ['Xoá ca', 'Delete shift', 'シフトを削除', '删除班次', '근무 삭제'],
+  del: ['Xoá', 'Delete', '削除', '删除', '삭제'],
+  nDays: (n) => [`${n} ngày`, `${n} days`, `${n}日`, `${n}天`, `${n}일`],
+  untilHM: (h, m) => [
+    h ? `${h} giờ${m ? ` ${m} phút` : ''}` : `${m} phút`,
+    h ? `${h} h${m ? ` ${m} min` : ''}` : `${m} min`,
+    h ? `${h}時間${m ? `${m}分` : ''}` : `${m}分`,
+    h ? `${h}小时${m ? `${m}分钟` : ''}` : `${m}分钟`,
+    h ? `${h}시간${m ? ` ${m}분` : ''}` : `${m}분`,
+  ],
+  mins: (n) => [`${n} phút`, `${n} min`, `${n}分`, `${n} 分钟`, `${n}분`],
+  autoOut1: (d, s, e) => [`Ca ${d} ở ${s} quên ra ca: đã tính giờ ra theo lịch ${e}`, `Shift ${d} at ${s} wasn’t clocked out: ended at the scheduled ${e}`, `${d} ${s}のシフトは退勤忘れのため、予定の${e}で退勤にしました`, `${d} 在${s}的班次忘记下班打卡：已按排班 ${e} 计算`, `${d} ${s} 근무 퇴근 누락: 예정 시간 ${e}로 계산했어요`],
+  autoOutN: (n) => [`${n} ca quên ra ca: đã tính giờ ra theo lịch`, `${n} shifts weren’t clocked out: ended at the scheduled times`, `退勤忘れ${n}件を予定時刻で退勤にしました`, `${n} 个班次忘记下班打卡：已按排班计算`, `퇴근 누락 ${n}건: 예정 시간으로 계산했어요`],
+  pastStart: (x) => [`Đã qua giờ vào ${x}`, `${x} past the start time`, `開始時刻を${x}過ぎています`, `已过上班时间 ${x}`, `시작 시간 ${x} 지남`],
+  startsAt: (s) => [`Vào ca lúc ${s} · bấm khi bắt đầu làm`, `Starts at ${s} · tap when you begin`, `${s}開始・勤務開始時にタップ`, `${s} 上班 · 开始工作时点击`, `${s} 시작 · 일을 시작할 때 누르세요`],
+  clockIn: ['Vào ca', 'Clock in', '出勤', '上班打卡', '출근'],
+  clockOut: ['Ra ca', 'Clock out', '退勤', '下班打卡', '퇴근'],
+  breakBtn: ['Nghỉ', 'Break', '休憩', '休息', '휴게'],
+  breakEnd: ['Hết nghỉ', 'End break', '休憩終了', '结束休息', '휴게 끝'],
+  inAt: (x) => [`Vào ${x}`, `In ${x}`, `出勤 ${x}`, `上班 ${x}`, `출근 ${x}`],
+  plannedOut: (x) => [`ra ca dự kiến ${x}`, `scheduled out ${x}`, `退勤予定 ${x}`, `预计下班 ${x}`, `퇴근 예정 ${x}`],
+  overrunWarn: (o, a, e) => [`Đã quá giờ ra ca ${o}. Quên bấm? Nếu không bấm, sau ${a} app tự tính giờ ra theo lịch (${e}).`, `${o} past your scheduled end. Forgot to clock out? If you don’t, after ${a} the app ends the shift at the scheduled time (${e}).`, `退勤予定を${o}過ぎています。押し忘れですか？押さない場合、${a}後に予定の退勤時刻（${e}）で記録します。`, `已超过预计下班时间 ${o}。忘记打卡了？若不打卡，${a}后将按排班时间（${e}）记为下班。`, `퇴근 예정 시간을 ${o} 지났어요. 깜빡하셨나요? 누르지 않으면 ${a} 후 예정 시간(${e})으로 퇴근 처리돼요.`],
+  breakSince: (x) => [`đang nghỉ từ ${x}`, `on break since ${x}`, `${x}から休憩中`, `${x} 起休息中`, `${x}부터 휴게 중`],
+  ofPlanned: (x) => [`/ ${x} dự kiến`, `/ ${x} scheduled`, `/ 予定${x}`, `/ 计划 ${x}`, `/ 예정 ${x}`],
+  stBreak: ['休憩中', 'On break', '休憩中', '休息中', '휴게 중'],
+  stWork: ['勤務中', 'Working', '勤務中', '工作中', '근무 중'],
+  subBreak: ['đang nghỉ giải lao', 'on a break', '休憩中', '休息中', '휴게 중'],
+  subIn: ['đã vào ca', 'clocked in', '出勤済み', '已上班打卡', '출근함'],
+  subLive: (x) => [`đã đến giờ · còn ${x}`, `started · ${x} left`, `開始済み・残り${x}`, `已开始 · 还剩 ${x}`, `시작됨 · ${x} 남음`],
+  subSoon: (x) => [`bắt đầu sau ${x}`, `starts in ${x}`, `あと${x}で開始`, `${x}后开始`, `${x} 후 시작`],
+  hOnShift: ['Đang trong ca', 'On shift now', '勤務中のシフト', '当前班次', '근무 중'],
+  hNext: ['Ca tiếp theo', 'Next shift', '次のシフト', '下一个班次', '다음 근무'],
+  workX: (x) => [`${x} làm việc`, `${x} of work`, `実働${x}`, `工作 ${x}`, `근무 ${x}`],
+  relWeek: (d) => [
+    d === 0 ? 'Tuần này' : d === 1 ? 'Tuần sau' : d === -1 ? 'Tuần trước' : d > 0 ? `${d} tuần tới` : `${-d} tuần trước`,
+    d === 0 ? 'This week' : d === 1 ? 'Next week' : d === -1 ? 'Last week' : d > 0 ? `In ${d} weeks` : `${-d} weeks ago`,
+    d === 0 ? '今週' : d === 1 ? '来週' : d === -1 ? '先週' : d > 0 ? `${d}週間後` : `${-d}週間前`,
+    d === 0 ? '本周' : d === 1 ? '下周' : d === -1 ? '上周' : d > 0 ? `${d}周后` : `${-d}周前`,
+    d === 0 ? '이번 주' : d === 1 ? '다음 주' : d === -1 ? '지난주' : d > 0 ? `${d}주 후` : `${-d}주 전`,
+  ],
+  relMonth: (d) => [
+    d === 0 ? 'Tháng này' : d === 1 ? 'Tháng sau' : d === -1 ? 'Tháng trước' : d > 0 ? `${d} tháng tới` : `${-d} tháng trước`,
+    d === 0 ? 'This month' : d === 1 ? 'Next month' : d === -1 ? 'Last month' : d > 0 ? `In ${d} months` : `${-d} months ago`,
+    d === 0 ? '今月' : d === 1 ? '来月' : d === -1 ? '先月' : d > 0 ? `${d}か月後` : `${-d}か月前`,
+    d === 0 ? '本月' : d === 1 ? '下月' : d === -1 ? '上月' : d > 0 ? `${d}个月后` : `${-d}个月前`,
+    d === 0 ? '이번 달' : d === 1 ? '다음 달' : d === -1 ? '지난달' : d > 0 ? `${d}개월 후` : `${-d}개월 전`,
+  ],
+  weekCanWork: (x) => [`Tuần này còn làm được ${x}`, `You can still work ${x} this week`, `今週はあと${x}働けます`, `本周还可工作 ${x}`, `이번 주 ${x} 더 일할 수 있어요`],
+  toThisWeek: ['Về tuần này', 'Back to this week', '今週に戻る', '回到本周', '이번 주로'],
+  prevWeek: ['Tuần trước', 'Previous week', '前の週', '上一周', '이전 주'],
+  nextWeek: ['Tuần sau', 'Next week', '次の週', '下一周', '다음 주'],
+  vacSuffix: [' · kỳ nghỉ', ' · school break', '・長期休業', ' · 长假', ' · 방학'],
+  addShift: ['Thêm ca', 'Add shift', 'シフト追加', '添加班次', '근무 추가'],
+  tipFuture: (a, b) => [`Tuần này còn ${a} ca chưa làm. Bớt ít nhất ${b} để về dưới giới hạn.`, `${a} of this week’s shifts are still ahead. Cut at least ${b} to get back under the limit.`, `今週はまだ${a}分のシフトが残っています。上限内に収めるには${b}以上減らしてください。`, `本周还有 ${a} 的班次未上。至少减少 ${b} 才能回到上限以内。`, `이번 주 남은 근무가 ${a} 있어요. 한도 안으로 돌아가려면 최소 ${b} 줄이세요.`],
+  tipNext: (a, b, c, d) => [`Tuần sau (${a} – ${b}) đang xếp ${c} / ${d}.`, `Next week (${a} – ${b}) has ${c} / ${d} scheduled.`, `来週（${a} – ${b}）は${c} / ${d}の予定です。`, `下周（${a} – ${b}）已排 ${c} / ${d}。`, `다음 주(${a} – ${b})는 ${c} / ${d} 예정이에요.`],
+  overTitle: (o, l) => [`Vượt ${o} so với giới hạn ${l}/tuần`, `${o} over the ${l}/week limit`, `週${l}の上限を${o}超えています`, `超出每周 ${l} 上限 ${o}`, `주 ${l} 한도를 ${o} 초과했어요`],
+  overBody: ['Các ca có nhãn “Vượt giới hạn” là phần làm vượt. Hãy rút lại lịch và báo quản lý điều chỉnh ca.', 'Shifts tagged “Over the limit” are the excess. Cut back your schedule and ask your manager to adjust your shifts.', '「上限超過」ラベルのシフトが超過分です。シフトを減らし、店長に調整を相談してください。', '带“超出上限”标签的班次就是超出部分。请减少排班并请店长调整。', '‘한도 초과’ 표시가 있는 근무가 초과분이에요. 근무를 줄이고 매니저에게 조정을 요청하세요.'],
+  seeNextWeek: ['Xem lịch tuần sau', 'See next week', '来週を見る', '查看下周', '다음 주 보기'],
+  startTitle: ['Bắt đầu ghi giờ làm', 'Start tracking your hours', '労働時間の記録を始めよう', '开始记录工时', '근무 시간 기록 시작하기'],
+  start1: ['Lưu quán ở tab Quán: tên, 時給 và các ca hay làm.', 'Save a job in the Jobs tab: name, hourly wage (時給) and your usual shifts.', '「バイト先」タブで店名、時給、よく入るシフトを保存。', '在“店铺”页保存店名、时薪（時給）和常上的班次。', '알바처 탭에서 이름, 시급(時給), 자주 하는 근무를 저장하세요.'],
+  start2: ['Thêm ca: chọn quán, chạm vào ca, chọn ngày là xong.', 'Add a shift: pick the job, tap a shift, choose the date. Done.', 'シフト追加：バイト先を選び、シフトをタップして日付を選ぶだけ。', '添加班次：选店铺、点班次、选日期即可。', '근무 추가: 알바처 선택, 근무 탭, 날짜 선택이면 끝.'],
+  start3: (x) => [`App cộng giờ, tính lương và báo đỏ khi tuần vượt ${x}.`, `The app adds up hours, estimates pay and turns red when a week goes over ${x}.`, `時間を合計し、給料を計算し、週${x}を超えると赤で警告します。`, `应用会累计工时、估算工资，并在一周超过 ${x} 时标红提醒。`, `시간을 합산하고 급여를 계산하며, 주 ${x}를 넘으면 빨간색으로 알려줘요.`],
+  addShop: ['Thêm quán', 'Add job', 'バイト先を追加', '添加店铺', '알바처 추가'],
+  tLeftWeek: ['Còn lại trong tuần', 'Left this week', '今週の残り', '本周剩余', '이번 주 남은 시간'],
+  tShiftsWeek: ['Ca trong tuần', 'Shifts this week', '今週のシフト', '本周班次', '이번 주 근무'],
+  tEstPay: ['Lương ước tính', 'Est. pay', '給料見込み', '预估工资', '예상 급여'],
+  swipeHint: ['vuốt trái để xoá', 'swipe left to delete', '左スワイプで削除', '左滑删除', '왼쪽으로 밀어 삭제'],
+  noShiftsWeek: ['Chưa có ca nào trong tuần này.', 'No shifts this week yet.', '今週のシフトはまだありません。', '本周还没有班次。', '이번 주 근무가 아직 없어요.'],
+  byShop: ['Theo quán', 'By job', 'バイト先別', '按店铺', '알바처별'],
+  monthTitle: (y, m) => [`Tháng ${m}, ${y}`, `${EN_MONTHS[m - 1]} ${y}`, `${y}年${m}月`, `${y}年${m}月`, `${y}년 ${m}월`],
+  prevMonth: ['Tháng trước', 'Previous month', '前の月', '上个月', '이전 달'],
+  nextMonth: ['Tháng sau', 'Next month', '次の月', '下个月', '다음 달'],
+  segOverview: ['Tổng quan', 'Overview', '概要', '概览', '개요'],
+  segPay: ['Lương', 'Pay', '給料', '工资', '급여'],
+  toThisMonth: ['Về tháng này', 'Back to this month', '今月に戻る', '回到本月', '이번 달로'],
+  payEmpty: (m) => [`Chưa có ca nào trong kỳ lương chốt tháng ${m}.`, `No shifts in the pay period closing in ${EN_MONTHS[m - 1]}.`, `${m}月締めの給与期間にシフトはありません。`, `${m}月截止的工资周期内还没有班次。`, `${m}월 마감 급여 기간에 근무가 없어요.`],
+  payHeroK: (m) => [`Lương dự tính · kỳ chốt tháng ${m}`, `Estimated pay · period closing in ${EN_MONTHS[m - 1]}`, `給料見込み・${m}月締め`, `预估工资 · ${m}月截止`, `예상 급여 · ${m}월 마감분`],
+  payHeroS: (x) => [`Đã làm ${x} · trước thuế, gồm cả ca đã xếp lịch`, `Earned so far ${x} · before tax, includes scheduled shifts`, `勤務済み${x}・税引前、予定シフトを含む`, `已工作 ${x} · 税前，含已排班次`, `근무 완료 ${x} · 세전, 예정 근무 포함`],
+  payOn: (d, y) => [`Nhận ${d} · ${y}`, `Paid ${d} · ${y}`, `${d}支給・${y}`, `${d} 发放 · ${y}`, `${d} 지급 · ${y}`],
+  payPeriod: ['Kỳ lương', 'Pay period', '給与期間', '工资周期', '급여 기간'],
+  nightRow: (p) => [`Phụ cấp đêm +${p}% · 22:00–5:00`, `Night premium +${p}% · 22:00–5:00`, `深夜手当 +${p}%・22:00–5:00`, `夜班补贴 +${p}% · 22:00–5:00`, `야간 수당 +${p}% · 22:00–5:00`],
+  transRow: ['Tiền tàu 交通費', 'Transport 交通費', '交通費', '交通费 交通費', '교통비 交通費'],
+  paidOnDay: (d) => [`Nhận ngày ${d}`, `Paid ${d}`, `${d}支給`, `${d} 发放`, `${d} 지급`],
+  periodX: (a, b) => [`Kỳ ${a} – ${b}`, `Period ${a} – ${b}`, `期間 ${a} – ${b}`, `周期 ${a} – ${b}`, `기간 ${a} – ${b}`],
+  noWage: ['Chưa nhập 時給.', 'No hourly wage (時給) yet.', '時給が未入力です。', '尚未输入时薪（時給）。', '시급(時給)이 아직 없어요.'],
+  enterWageShop: ['Nhập lương cho quán này', 'Enter this job’s wage', 'このバイト先の時給を入力', '输入该店铺的工资', '이 알바처 시급 입력'],
+  payFoot: ['Ngày lễ Nhật (祝日) được nhận tự động. Ca qua đêm tính theo ngày bắt đầu ca. Chưa trừ thuế thu nhập và bảo hiểm.', 'Japanese public holidays (祝日) are detected automatically. Overnight shifts count on the day they start. Income tax and insurance are not deducted.', '祝日は自動で判定します。日をまたぐシフトは開始日で計算します。所得税・社会保険は差し引いていません。', '日本法定节假日（祝日）自动识别。跨夜班次按开始日计算。未扣除所得税和保险。', '일본 공휴일(祝日)은 자동으로 인식해요. 밤샘 근무는 시작한 날 기준이에요. 소득세와 보험료는 빼지 않았어요.'],
+  calWeek: ['Tuần', 'Week', '週', '周', '주'],
+  calWeekA: (d, x) => [`Tuần ${d}: ${x}`, `Week ${d}: ${x}`, `${d}の週: ${x}`, `${d} 周: ${x}`, `${d} 주: ${x}`],
+  calTitle: ['Lịch làm', 'Work calendar', 'シフトカレンダー', '排班日历', '근무 달력'],
+  calHint: ['chạm ngày để xem ca', 'tap a day to see shifts', '日付をタップでシフト表示', '点日期查看班次', '날짜를 눌러 근무 보기'],
+  calLegend: ['Ô càng đậm là ngày làm càng nhiều giờ. Gạch đỏ: tuần vượt giới hạn, số đỏ: ngày lễ. Chạm cột Tuần để mở tuần đó.', 'Darker cells mean more hours. Red underline: week over the limit; red number: holiday. Tap the Week column to open that week.', '色が濃いほど長く働いた日です。赤い下線は上限超過の週、赤い数字は祝日。「週」の列をタップするとその週を開きます。', '格子越深表示当天工时越多。红色下划线：该周超限；红色数字：节假日。点“周”列可打开该周。', '진할수록 많이 일한 날이에요. 빨간 밑줄: 한도 초과 주, 빨간 숫자: 공휴일. ‘주’ 열을 누르면 그 주가 열려요.'],
+  m_ok: ['Trong dự trù', 'Within the cap', '上限内', '在上限内', '상한 이내'],
+  m_near: ['Gần chạm dự trù', 'Near the cap', '上限間近', '接近上限', '상한 임박'],
+  m_over: ['Vượt dự trù', 'Over the cap', '上限超過', '超出上限', '상한 초과'],
+  monthTotal: ['Tổng giờ trong tháng', 'Hours this month', '今月の合計時間', '本月工时合计', '이번 달 총 근무 시간'],
+  monthFoot: (a, b) => [`Đã làm ${a} · đã xếp lịch ${b}`, `Worked ${a} · scheduled ${b}`, `勤務済み${a}・予定${b}`, `已工作 ${a} · 已排 ${b}`, `근무 완료 ${a} · 예정 ${b}`],
+  overWeeks: (n) => [`${n} tuần vượt giới hạn`, n === 1 ? '1 week over the limit' : `${n} weeks over the limit`, `上限超過の週が${n}つ`, `${n} 周超出上限`, `한도 초과 ${n}주`],
+  overBy: (x) => [`(vượt ${x})`, `(${x} over)`, `（${x}超過）`, `（超出 ${x}）`, `(${x} 초과)`],
+  openOverWeek: ['Mở tuần vượt', 'Open that week', '超過した週を開く', '打开超限的周', '초과한 주 열기'],
+  capUniform: (w, n) => [`Tối đa dự trù · ${w}/tuần × ${n} ngày ÷ 7`, `Monthly cap · ${w}/week × ${n} days ÷ 7`, `月の上限目安・週${w} × ${n}日 ÷ 7`, `月上限 · 每周 ${w} × ${n} 天 ÷ 7`, `월 상한 · 주 ${w} × ${n}일 ÷ 7`],
+  capVac: (n) => [`Tối đa dự trù · ${n} ngày, có kỳ nghỉ`, `Monthly cap · ${n} days, incl. school break`, `月の上限目安・${n}日（長期休業含む）`, `月上限 · ${n} 天，含长假`, `월 상한 · ${n}일, 방학 포함`],
+  leftDays: (n) => [`Còn có thể xếp trong ${n} ngày`, `Still open over ${n} days`, `残り${n}日で入れられる時間`, `剩余 ${n} 天内还可排`, `남은 ${n}일 동안 가능`],
+  leftPast: ['Còn dư, tháng đã qua', 'Unused, month is over', '余り（月は終了）', '剩余，本月已结束', '남음, 달 종료'],
+  avgLeft: ['Trung bình mỗi ngày còn lại', 'Avg per remaining day', '残り1日あたり平均', '剩余每天平均', '남은 하루 평균'],
+  tShiftsMonth: ['Ca trong tháng', 'Shifts this month', '今月のシフト', '本月班次', '이번 달 근무'],
+  shopsTitle: ['Quán làm', 'Jobs', 'バイト先', '打工店铺', '알바처'],
+  shopsSub: (n) => [`${n} quán · chạm một ca để ghi nhanh`, `${n} ${n === 1 ? 'job' : 'jobs'} · tap a shift to log it fast`, `${n}件・シフトをタップですぐ記録`, `${n} 家 · 点班次即可快速记录`, `${n}곳 · 근무를 눌러 빠르게 기록`],
+  shopsSub0: ['Lưu quán một lần, lần sau chỉ cần chọn', 'Save a job once, then just pick it', '一度保存すれば次から選ぶだけ', '保存一次，之后只需选择', '한 번 저장하면 다음부터 선택만'],
+  noShops: ['Chưa có quán nào', 'No jobs yet', 'バイト先がまだありません', '还没有店铺', '알바처가 아직 없어요'],
+  noShopsBody: ['Lưu tên quán, 時給 và giờ của các ca hay làm. Khi thêm ca bạn chỉ cần chọn quán và chạm vào ca, không phải gõ lại.', 'Save the name, hourly wage (時給) and your usual shift times. When adding a shift, just pick the job and tap a shift, no retyping.', '店名・時給・よく入るシフトの時間を保存しておけば、シフト追加はバイト先を選んでタップするだけ。', '保存店名、时薪（時給）和常上班次的时间。添加班次时只需选店铺并点班次，无需重新输入。', '이름, 시급(時給), 자주 하는 근무 시간을 저장하세요. 근무 추가 때는 알바처를 고르고 근무를 누르기만 하면 돼요.'],
+  addFirstShop: ['Thêm quán đầu tiên', 'Add your first job', '最初のバイト先を追加', '添加第一家店铺', '첫 알바처 추가'],
+  nLogged: (n) => [`${n} ca đã ghi`, `${n} shifts logged`, `記録済み${n}件`, `已记录 ${n} 个班次`, `기록된 근무 ${n}건`],
+  perH: ['/giờ', '/h', '/時', '/小时', '/시간'],
+  editInfo: ['Sửa thông tin', 'Edit details', '情報を編集', '编辑信息', '정보 수정'],
+  thisMonthX: (x) => [`Tháng này ${x}`, `This month ${x}`, `今月 ${x}`, `本月 ${x}`, `이번 달 ${x}`],
+  wWd: ['時給 ngày thường', 'Wage, weekday', '時給（平日）', '工作日时薪', '평일 시급'],
+  wWkd: ['時給 T7, CN', 'Wage, Sat–Sun', '時給（土日）', '周末时薪', '토·일 시급'],
+  wHol: ['時給 ngày lễ', 'Wage, holiday', '時給（祝日）', '节假日时薪', '공휴일 시급'],
+  f_night: ['Phụ cấp đêm 22–5h', 'Night premium 22–5', '深夜手当 22–5時', '夜班补贴 22–5点', '야간 수당 22–5시'],
+  f_trans: ['Tiền tàu mỗi ngày', 'Transport per day', '交通費（1日）', '每日交通费', '하루 교통비'],
+  noWageHint: (l) => [`Chưa nhập 時給. ${l} để app tính tiền cho bạn.`, `No hourly wage yet. ${l} so the app can estimate your pay.`, `時給が未入力です。${l}と給料を計算できます。`, `尚未输入时薪。${l}后应用即可估算工资。`, `시급이 없어요. ${l}하면 급여를 계산해 드려요.`],
+  enterWage: ['Nhập lương', 'Enter a wage', '時給を入力する', '输入工资', '시급 입력'],
+  usualShifts: ['Ca thường làm', 'Usual shifts', 'よく入るシフト', '常用班次', '자주 하는 근무'],
+  otherShift: ['Ca khác', 'Other shift', 'その他', '其他班次', '다른 근무'],
+  logShiftA: (x) => [`Ghi ca ${x}`, `Log shift ${x}`, `${x}を記録`, `记录班次 ${x}`, `${x} 근무 기록`],
+  defShiftName: ['Ca làm', 'Shift', 'シフト', '班次', '근무'],
+  fromY: (y) => [` · từ ${y}`, ` · from ${y}`, ` · ${y}〜`, ` · ${y} 起`, ` · ${y}부터`],
+  noPresets: (l) => [`Chưa lưu ca thường làm. ${l}`, `No usual shifts saved. ${l}`, `よく入るシフトが未保存です。${l}`, `还没有保存常用班次。${l}`, `자주 하는 근무가 없어요. ${l}`],
+  addNow: ['Thêm ngay', 'Add now', '今すぐ追加', '立即添加', '지금 추가'],
+  setSub: ['Giới hạn giờ làm, kỳ nghỉ và dữ liệu', 'Hour limits, school breaks and data', '労働時間の上限・長期休業・データ', '工时上限、长假和数据', '근무 한도, 방학, 데이터'],
+  lang: ['Ngôn ngữ', 'Language', '言語', '语言', '언어'],
+  secTerm: ['Giới hạn giờ làm · kỳ học', 'Hour limit · term time', '労働時間の上限・学期中', '工时上限 · 学期内', '근무 한도 · 학기 중'],
+  maxWeek: ['Tối đa mỗi tuần', 'Max per week', '週の上限', '每周上限', '주당 최대'],
+  visa28: ['Visa du học: 28 giờ', 'Student visa: 28 hours', '留学ビザ: 28時間', '留学签证：28 小时', '유학 비자: 28시간'],
+  hUnit: ['giờ', 'h', '時間', '小时', '시간'],
+  weekStartL: ['Ngày đầu tuần', 'Week starts on', '週の始まり', '每周起始日', '주 시작 요일'],
+  mon: ['Thứ Hai', 'Mon', '月曜', '周一', '월요일'],
+  sun: ['CN', 'Sun', '日曜', '周日', '일요일'],
+  termFoot: (x) => [`Giờ còn lại tính trong từng tuần, từ ngày đầu tuần ở trên đến hết 7 ngày. Giờ tối đa của tháng: ${x} × số ngày ÷ 7.`, `Remaining hours are counted per week, from the start day above through 7 days. Monthly cap: ${x} × days ÷ 7.`, `残り時間は上で選んだ曜日から7日間ごとに計算します。月の上限: ${x} × 日数 ÷ 7。`, `剩余工时按周计算，从上面选的起始日起共 7 天。月上限：${x} × 天数 ÷ 7。`, `남은 시간은 위의 시작 요일부터 7일 단위로 계산해요. 월 상한: ${x} × 일수 ÷ 7.`],
+  secVac: ['Kỳ nghỉ dài · 長期休業', 'School breaks · 長期休業', '長期休業', '长假 · 長期休業', '방학 · 長期休業'],
+  inVac: ['Trong kỳ nghỉ của trường', 'During official school breaks', '学校の長期休業中', '学校长假期间', '학교 방학 기간'],
+  vacation: ['Kỳ nghỉ', 'School break', '長期休業', '长假', '방학'],
+  addVac: ['Thêm kỳ nghỉ', 'Add school break', '長期休業を追加', '添加长假', '방학 추가'],
+  vacFoot: (x) => [`Tuần nằm trọn trong kỳ nghỉ dùng giới hạn ${x}/tuần.`, `Weeks fully inside a break use the ${x}/week limit.`, `全日が長期休業に入る週は週${x}の上限を使います。`, `完全处于长假内的周使用每周 ${x} 上限。`, `방학에 완전히 포함된 주는 주 ${x} 한도를 적용해요.`],
+  secData: ['Dữ liệu', 'Data', 'データ', '数据', '데이터'],
+  exportL: ['Xuất bản sao lưu', 'Export backup', 'バックアップを書き出す', '导出备份', '백업 내보내기'],
+  exportSub: (a, b) => [`${a} ca · ${b} quán · dữ liệu chỉ nằm trên máy này`, `${a} shifts · ${b} jobs · data stays on this device`, `シフト${a}件・バイト先${b}件・データはこの端末内のみ`, `${a} 个班次 · ${b} 家店铺 · 数据仅存于本机`, `근무 ${a}건 · 알바처 ${b}곳 · 데이터는 이 기기에만 저장`],
+  importL: ['Nhập từ bản sao lưu', 'Import backup', 'バックアップから復元', '从备份导入', '백업에서 가져오기'],
+  importSub: ['Thay thế dữ liệu hiện tại', 'Replaces current data', '現在のデータを置き換えます', '将替换当前数据', '현재 데이터를 대체해요'],
+  clearAll: ['Xoá toàn bộ dữ liệu', 'Delete all data', 'すべてのデータを削除', '删除全部数据', '모든 데이터 삭제'],
+  rulesFoot: ['Quy định thường gặp với visa du học: tối đa 28 giờ mỗi tuần trong kỳ học, cộng tất cả các nơi làm; trong kỳ nghỉ dài do trường quy định có thể làm đến 40 giờ/tuần. Ứng dụng chỉ giúp bạn theo dõi. Hãy xác nhận quy định cụ thể với trường hoặc Cục Xuất nhập cảnh (出入国在留管理庁).', 'Typical student visa rule: up to 28 hours a week during term, all jobs combined; during long breaks set by your school, up to 40 hours a week. This app only helps you keep track. Confirm the exact rules with your school or the Immigration Services Agency (出入国在留管理庁).', '留学生の資格外活動の一般的なルール：学期中はすべてのバイト先の合計で週28時間まで、学校が定める長期休業中は週40時間まで。このアプリは記録の補助です。詳しくは学校または出入国在留管理庁に確認してください。', '留学签证常见规定：学期内每周最多 28 小时（所有打工合计）；学校规定的长假期间每周最多 40 小时。本应用仅帮助你记录。具体规定请向学校或出入国在留管理厅（出入国在留管理庁）确认。', '유학 비자 일반 규정: 학기 중에는 모든 알바 합산 주 28시간까지, 학교가 정한 방학 중에는 주 40시간까지. 이 앱은 기록을 돕는 용도예요. 정확한 규정은 학교나 출입국재류관리청(出入国在留管理庁)에 확인하세요.'],
+  saveFail: ['Không lưu được trên thiết bị này. Hãy xuất bản sao lưu ngay.', 'Couldn’t save on this device. Export a backup now.', 'この端末に保存できません。今すぐバックアップを書き出してください。', '无法在此设备上保存。请立即导出备份。', '이 기기에 저장할 수 없어요. 지금 백업을 내보내세요.'],
+  close: ['Đóng', 'Close', '閉じる', '关闭', '닫기'],
+  holSuffix: [' · ngày lễ', ' · holiday', '・祝日', ' · 节假日', ' · 공휴일'],
+  noShopsChip: ['Chưa có quán nào. Lưu quán một lần, lần sau chỉ cần chọn.', 'No jobs yet. Save one once, then just pick it.', 'バイト先がまだありません。一度保存すれば次から選ぶだけ。', '还没有店铺。保存一次，之后只需选择。', '알바처가 없어요. 한 번 저장하면 다음부터 선택만.'],
+  plusAddShop: ['+ Thêm quán', '+ Add job', '+ バイト先を追加', '+ 添加店铺', '+ 알바처 추가'],
+  plusNewShop: ['+ Quán mới', '+ New job', '+ 新しいバイト先', '+ 新店铺', '+ 새 알바처'],
+  noPresetsHere: (l) => [`Quán này chưa lưu ca thường làm. ${l} để lần sau chỉ cần chạm chọn.`, `This job has no usual shifts. ${l} so next time you just tap one.`, `このバイト先はよく入るシフトが未保存です。${l}と次からタップで選べます。`, `该店铺还没有常用班次。${l}后下次点一下即可。`, `이 알바처는 자주 하는 근무가 없어요. ${l}하면 다음엔 누르기만 하면 돼요.`],
+  savePresets: ['Lưu ca thường làm', 'Save usual shifts', 'よく入るシフトを保存する', '保存常用班次', '자주 하는 근무 저장'],
+  none: ['Không', 'None', 'なし', '无', '없음'],
+  editShift: ['Sửa ca', 'Edit shift', 'シフトを編集', '编辑班次', '근무 수정'],
+  shopL: ['Quán', 'Job', 'バイト先', '店铺', '알바처'],
+  timeL: ['Thời gian', 'Time', '時間', '时间', '시간'],
+  dateL: ['Ngày', 'Date', '日付', '日期', '날짜'],
+  tomorrow: ['Ngày mai', 'Tomorrow', '明日', '明天', '내일'],
+  plus7: ['+7 ngày', '+7 days', '+7日', '+7天', '+7일'],
+  startL: ['Giờ vào', 'Start', '開始', '上班', '시작'],
+  endL: ['Giờ ra', 'End', '終了', '下班', '종료'],
+  breakL: ['Nghỉ giải lao', 'Break', '休憩', '休息', '휴게'],
+  noteL: ['Ghi chú', 'Note', 'メモ', '备注', '메모'],
+  optional: ['Không bắt buộc', 'Optional', '任意', '可选', '선택'],
+  dup7: ['Chép sang +7 ngày', 'Copy to +7 days', '7日後にコピー', '复制到 7 天后', '7일 뒤로 복사'],
+  saveChanges: ['Lưu thay đổi', 'Save changes', '変更を保存', '保存更改', '변경 저장'],
+  saveShift: ['Lưu ca', 'Save shift', 'シフトを保存', '保存班次', '근무 저장'],
+  actualH: ['Giờ thực làm', 'Actual hours', '実績', '实际工时', '실제 근무'],
+  clockedInAt: ['Đã vào ca lúc', 'Clocked in at', '出勤時刻', '上班打卡时间', '출근 시각'],
+  workedL: ['Đã làm', 'Worked', '勤務時間', '已工作', '근무함'],
+  clockOutNow: ['Ra ca ngay', 'Clock out now', '今すぐ退勤', '立即下班打卡', '지금 퇴근'],
+  cancelPunch: ['Huỷ chấm công', 'Cancel clock-in', '打刻を取り消す', '取消打卡', '출근 기록 취소'],
+  liveHelp: ['Đang trong ca. Bấm Ra ca ở đây hoặc ở Trang chủ khi xong việc.', 'You’re on shift. Tap Clock out here or on Home when you finish.', '勤務中です。終わったらここかホームで退勤を押してください。', '上班中。结束时在这里或首页点“下班打卡”。', '근무 중이에요. 끝나면 여기나 홈에서 퇴근을 누르세요.'],
+  enterActual: ['Nhập giờ thực tế', 'Enter actual times', '実績を入力', '输入实际时间', '실제 시간 입력'],
+  actualHelp: ['Khi đến ca, bấm Vào ca / Nghỉ / Ra ca ở Trang chủ để app tự ghi. Quên bấm thì nhập tay ở đây.', 'At your shift, tap Clock in / Break / Clock out on Home and the app records it. Forgot? Enter it here.', 'シフト時はホームで出勤／休憩／退勤を押すと自動で記録されます。押し忘れたらここで入力。', '上班时在首页点“上班打卡 / 休息 / 下班打卡”自动记录。忘了就在这里手动输入。', '근무 때 홈에서 출근 / 휴게 / 퇴근을 누르면 자동 기록돼요. 깜빡했다면 여기서 입력하세요.'],
+  aStart: ['Vào thực tế', 'Actual start', '実際の開始', '实际上班', '실제 시작'],
+  aEnd: ['Ra thực tế', 'Actual end', '実際の終了', '实际下班', '실제 종료'],
+  aBreak: ['Nghỉ thực tế', 'Actual break', '実際の休憩', '实际休息', '실제 휴게'],
+  minU: ['phút', 'min', '分', '分钟', '분'],
+  rmActual: ['Xoá giờ thực tế', 'Remove actual times', '実績を削除', '删除实际时间', '실제 시간 삭제'],
+  autoNote: ['Hôm đó quên bấm Ra ca nên giờ ra lấy theo lịch. Sửa lại nếu bạn về sớm hoặc muộn hơn. ', 'You didn’t clock out that day, so the end time came from the schedule. Fix it if you left earlier or later. ', 'この日は退勤を押し忘れたため、予定の終了時刻を使っています。早く・遅く帰った場合は修正してください。', '当天忘记下班打卡，下班时间按排班记录。若提前或延后离开请修改。', '그날 퇴근을 누르지 않아 예정 종료 시간을 사용했어요. 일찍 또는 늦게 끝났다면 수정하세요. '],
+  actualFoot: ['Tổng giờ tuần và lương tính theo giờ thực tế này thay cho giờ đã xếp.', 'Weekly totals and pay use these actual times instead of the schedule.', '週の合計と給料は予定ではなくこの実績で計算します。', '每周合计和工资将按这些实际时间计算，而非排班时间。', '주간 합계와 급여는 예정 대신 이 실제 시간으로 계산해요.'],
+  e_shop: ['Chọn quán, hoặc chạm “+ Quán mới” để lưu quán.', 'Pick a job, or tap “+ New job” to save one.', 'バイト先を選ぶか「+ 新しいバイト先」で保存してください。', '请选择店铺，或点“+ 新店铺”保存一个。', '알바처를 선택하거나 ‘+ 새 알바처’를 눌러 저장하세요.'],
+  e_date: ['Chọn ngày làm.', 'Pick a date.', '日付を選んでください。', '请选择日期。', '날짜를 선택하세요.'],
+  e_time: ['Nhập giờ vào và giờ ra.', 'Enter start and end times.', '開始と終了の時刻を入力してください。', '请输入上班和下班时间。', '시작과 종료 시간을 입력하세요.'],
+  e_same: ['Giờ vào và giờ ra đang trùng nhau.', 'Start and end times are the same.', '開始と終了が同じ時刻です。', '上班和下班时间相同。', '시작과 종료 시간이 같아요.'],
+  e_brk: ['Thời gian nghỉ dài hơn cả ca làm.', 'The break is longer than the shift.', '休憩がシフトより長くなっています。', '休息时间比班次还长。', '휴게가 근무보다 길어요.'],
+  e_aTime: ['Nhập đủ giờ vào và giờ ra thực tế, hoặc xoá giờ thực tế.', 'Enter both actual times, or remove them.', '実績の開始と終了を入力するか、実績を削除してください。', '请填写完整的实际上下班时间，或删除实际时间。', '실제 시작·종료 시간을 모두 입력하거나 삭제하세요.'],
+  e_aSame: ['Giờ vào và giờ ra thực tế đang trùng nhau.', 'Actual start and end are the same.', '実績の開始と終了が同じ時刻です。', '实际上下班时间相同。', '실제 시작과 종료 시간이 같아요.'],
+  e_aBrk: ['Thời gian nghỉ thực tế dài hơn cả ca làm.', 'The actual break is longer than the shift.', '実際の休憩がシフトより長くなっています。', '实际休息时间比班次还长。', '실제 휴게가 근무보다 길어요.'],
+  pvEmpty: ['Nhập ngày và giờ để xem ca này ảnh hưởng thế nào đến tuần.', 'Enter a date and times to see how this shift affects your week.', '日付と時刻を入力すると、週への影響を表示します。', '输入日期和时间，查看该班次对本周的影响。', '날짜와 시간을 입력하면 이번 주에 미치는 영향을 보여줘요.'],
+  pvWork: ['làm việc', 'of work', '実働', '工作', '근무'],
+  pvBrk: (n) => [` · nghỉ ${n} phút`, ` · ${n} min break`, `・休憩${n}分`, ` · 休息 ${n} 分钟`, ` · 휴게 ${n}분`],
+  pvOvernight: [' · qua đêm, ra ca ngày hôm sau', ' · overnight, ends the next day', '・日またぎ、翌日終了', ' · 跨夜，次日下班', ' · 밤샘, 다음 날 종료'],
+  pvActual: (x) => [`Thực làm <b>${x}</b>`, `Actually worked <b>${x}</b>`, `実働 <b>${x}</b>`, `实际工作 <b>${x}</b>`, `실제 근무 <b>${x}</b>`],
+  vsPlan: (more, x) => [`${more ? 'hơn' : 'ít hơn'} lịch ${x}`, `${x} ${more ? 'more' : 'less'} than scheduled`, `予定より${x}${more ? '長い' : '短い'}`, `比排班${more ? '多' : '少'} ${x}`, `예정보다 ${x} ${more ? '더' : '덜'}`],
+  pvExact: [' · đúng như lịch', ' · exactly as scheduled', '・予定どおり', ' · 与排班一致', ' · 예정과 동일'],
+  pvWeek: (a, b) => [`Tuần ${a} – ${b}:`, `Week ${a} – ${b}:`, `${a} – ${b}の週:`, `${a} – ${b} 周：`, `${a} – ${b} 주:`],
+  overX: (x) => [` · vượt ${x}`, ` · ${x} over`, `・${x}超過`, ` · 超出 ${x}`, ` · ${x} 초과`],
+  leftX: (x) => [` · còn ${x}`, ` · ${x} left`, `・残り${x}`, ` · 剩余 ${x}`, ` · ${x} 남음`],
+  pvHol: (h) => [`ngày lễ (${h})`, `holiday (${h})`, `祝日（${h}）`, `节假日（${h}）`, `공휴일(${h})`],
+  pvWkd: ['T7, CN', 'weekend', '土日', '周末', '주말'],
+  pvWd: ['ngày thường', 'weekday', '平日', '工作日', '평일'],
+  pvNight: (x, p) => [`đêm ${x} +${p}%`, `night ${x} +${p}%`, `深夜${x} +${p}%`, `夜班 ${x} +${p}%`, `야간 ${x} +${p}%`],
+  pvTrain: (y) => [`tàu ${y}`, `transport ${y}`, `交通費${y}`, `交通费 ${y}`, `교통비 ${y}`],
+  pvEst: (y) => [`Ước tính ${y}`, `Estimate ${y}`, `見込み ${y}`, `预估 ${y}`, `예상 ${y}`],
+  pvHolOnly: (h) => [`Ngày lễ: ${h}`, `Holiday: ${h}`, `祝日: ${h}`, `节假日：${h}`, `공휴일: ${h}`],
+  pv6h: ['Ca trên 6 tiếng thường có ít nhất 45 phút nghỉ (労働基準法).', 'Shifts over 6 hours usually include at least a 45-minute break (労働基準法).', '6時間を超える勤務には通常45分以上の休憩があります（労働基準法）。', '超过 6 小时的班次通常至少有 45 分钟休息（労働基準法）。', '6시간이 넘는 근무는 보통 45분 이상 휴게가 있어요(労働基準法).'],
+  savedOver: (d, x) => [`Đã lưu. Tuần ${d} vượt ${x}!`, `Saved. The week of ${d} is ${x} over!`, `保存しました。${d}の週が${x}超過！`, `已保存。${d} 这周超出 ${x}！`, `저장했어요. ${d} 주가 ${x} 초과!`],
+  savedOk: (a, b, c) => [`Đã lưu ${a} · tuần ${b}/${c}`, `Saved ${a} · week ${b}/${c}`, `${a}を保存・週${b}/${c}`, `已保存 ${a} · 本周 ${b}/${c}`, `${a} 저장 · 주 ${b}/${c}`],
+  inOther: (s) => [`Bạn đang trong ca ở ${s}. Ra ca đó trước.`, `You’re still clocked in at ${s}. Clock out there first.`, `${s}で勤務中です。先に退勤してください。`, `你还在${s}上班中，请先下班打卡。`, `${s}에서 근무 중이에요. 먼저 퇴근하세요.`],
+  inAtT: (x) => [`Đã vào ca lúc ${x}`, `Clocked in at ${x}`, `${x}に出勤しました`, `${x} 已上班打卡`, `${x}에 출근했어요`],
+  brkAt: (x) => [`Bắt đầu nghỉ lúc ${x}`, `Break started at ${x}`, `${x}から休憩開始`, `${x} 开始休息`, `${x}부터 휴게 시작`],
+  brkDone: (n) => [`Hết nghỉ · nghỉ ${n} phút`, `Break over · ${n} min`, `休憩終了・${n}分`, `休息结束 · ${n} 分钟`, `휴게 끝 · ${n}분`],
+  tooSoon: ['Vừa vào ca chưa đến 1 phút. Muốn bỏ thì chọn Huỷ chấm công trong ca.', 'Clocked in less than a minute ago. To undo, choose Cancel clock-in in the shift.', '出勤から1分未満です。取り消すにはシフト内の「打刻を取り消す」を選んでください。', '上班打卡不到 1 分钟。如要取消，请在班次中选“取消打卡”。', '출근한 지 1분이 안 됐어요. 취소하려면 근무에서 ‘출근 기록 취소’를 선택하세요.'],
+  outDone: (x) => [`Đã ra ca · thực làm ${x}`, `Clocked out · worked ${x}`, `退勤しました・実働${x}`, `已下班打卡 · 实际工作 ${x}`, `퇴근했어요 · 실제 근무 ${x}`],
+  cancelled: ['Đã huỷ chấm công ca này', 'Clock-in cancelled for this shift', 'このシフトの打刻を取り消しました', '已取消该班次的打卡', '이 근무의 출근 기록을 취소했어요'],
+  weekOverX: (x) => [` · tuần vượt ${x}!`, ` · week is ${x} over!`, `・週${x}超過！`, ` · 本周超出 ${x}！`, ` · 주 ${x} 초과!`],
+  undo: ['Hoàn tác', 'Undo', '元に戻す', '撤销', '실행 취소'],
+  undone: ['Đã hoàn tác', 'Undone', '元に戻しました', '已撤销', '취소했어요'],
+  shiftDeleted: ['Đã xoá ca', 'Shift deleted', 'シフトを削除しました', '已删除班次', '근무를 삭제했어요'],
+  shiftRestored: ['Đã khôi phục ca', 'Shift restored', 'シフトを復元しました', '已恢复班次', '근무를 복원했어요'],
+  presetPh: ['Tên ca, ví dụ: Ca sáng', 'Shift name, e.g. Morning', 'シフト名（例: 朝番）', '班次名称，例如：早班', '근무 이름, 예: 오전'],
+  presetName: ['Tên ca', 'Shift name', 'シフト名', '班次名称', '근무 이름'],
+  rmThisShift: ['Xoá ca này', 'Remove this shift', 'このシフトを削除', '删除此班次', '이 근무 삭제'],
+  yenU: ['yên', 'yen', '円', '日元', '엔'],
+  shopInfo: ['Thông tin quán', 'Job details', 'バイト先の情報', '店铺信息', '알바처 정보'],
+  newShop: ['Quán mới', 'New job', '新しいバイト先', '新店铺', '새 알바처'],
+  returnHint: ['Lưu xong sẽ quay lại ca đang thêm', 'After saving you’ll return to your shift', '保存後、追加中のシフトに戻ります', '保存后将返回正在添加的班次', '저장 후 추가 중인 근무로 돌아가요'],
+  back: ['Quay lại', 'Back', '戻る', '返回', '뒤로'],
+  shopNameL: ['Tên quán', 'Name', '店名', '店名', '이름'],
+  shopNamePh: ['Ví dụ: Sukiya Baba', 'e.g. Sukiya Baba', '例: すき家 高田馬場', '例如：Sukiya Baba', '예: Sukiya Baba'],
+  wageSec: ['Lương và phụ cấp', 'Pay and allowances', '給料と手当', '工资和补贴', '급여와 수당'],
+  phWkd: ['như ngày thường', 'same as weekday', '平日と同じ', '同工作日', '평일과 동일'],
+  phHol: ['như T7, CN', 'same as weekend', '土日と同じ', '同周末', '주말과 동일'],
+  nightL: ['Phụ cấp đêm', 'Night premium', '深夜手当', '夜班补贴', '야간 수당'],
+  wageHelp: ['Ngày lễ Nhật (祝日) được nhận tự động. Phụ cấp đêm (深夜手当) cộng thêm cho phần làm từ 22:00 đến 5:00. Tiền tàu tính khứ hồi, mỗi ngày đi làm một lần.', 'Japanese holidays (祝日) are detected automatically. The night premium (深夜手当) is added for work between 22:00 and 5:00. Transport is the round trip, counted once per working day.', '祝日は自動で判定します。深夜手当は22:00〜5:00の勤務に加算されます。交通費は往復分を出勤日ごとに1回計算します。', '日本节假日（祝日）自动识别。夜班补贴（深夜手当）用于 22:00–5:00 的工作。交通费按往返计，每个上班日计一次。', '일본 공휴일(祝日)은 자동 인식해요. 야간 수당(深夜手当)은 22:00–5:00 근무에 더해져요. 교통비는 왕복 기준, 출근일마다 한 번 계산해요.'],
+  closeL: ['Ngày chốt', 'Cutoff day', '締め日', '截止日', '마감일'],
+  dayN: (d) => [`Ngày ${d}`, `Day ${d}`, `${d}日`, `${d}日`, `${d}일`],
+  monthEnd: ['Cuối tháng', 'Month end', '月末', '月底', '말일'],
+  payDayL: ['Ngày nhận', 'Payday', '給料日', '发薪日', '급여일'],
+  payDayPh: ['Ví dụ 25', 'e.g. 25', '例: 25', '例如 25', '예: 25'],
+  payMonthL: ['Tháng nhận', 'Paid in', '支給月', '发薪月份', '지급 월'],
+  nextMonthOpt: ['Tháng sau', 'Next month', '翌月', '次月', '익월'],
+  sameMonth: ['Cùng tháng chốt', 'Same month as cutoff', '当月', '当月', '당월'],
+  addPreset: ['Thêm ca thường làm', 'Add usual shift', 'よく入るシフトを追加', '添加常用班次', '자주 하는 근무 추가'],
+  presetHelp: ['Khi thêm ca chỉ cần chạm vào ca, không phải nhập lại giờ.', 'When adding a shift, just tap one, no retyping times.', 'シフト追加時はタップするだけで、時刻の再入力は不要です。', '添加班次时点一下即可，无需重新输入时间。', '근무 추가 때 누르기만 하면 돼요. 시간을 다시 입력할 필요 없어요.'],
+  contact: ['Liên hệ', 'Contact', '連絡先', '联系方式', '연락처'],
+  address: ['Địa chỉ', 'Address', '住所', '地址', '주소'],
+  phone: ['Điện thoại', 'Phone', '電話', '电话', '전화'],
+  shopNotePh: ['Quản lý, hạn nộp シフト…', 'Manager, シフト deadline…', '店長、シフト提出期限…', '店长、排班提交截止…', '매니저, 시프트 제출 마감…'],
+  color: ['Màu', 'Color', '色', '颜色', '색상'],
+  colorA: (c) => [`Màu ${c}`, `Color ${c}`, `色 ${c}`, `颜色 ${c}`, `색상 ${c}`],
+  delShop: ['Xoá quán', 'Delete job', 'バイト先を削除', '删除店铺', '알바처 삭제'],
+  saveShop: ['Lưu quán', 'Save job', 'バイト先を保存', '保存店铺', '알바처 저장'],
+  e_name: ['Nhập tên quán.', 'Enter a name.', '店名を入力してください。', '请输入店名。', '이름을 입력하세요.'],
+  unnamed: ['chưa đặt tên', 'unnamed', '名前なし', '未命名', '이름 없음'],
+  e_pTimes: (n) => [`Ca “${n}” cần đủ giờ vào và giờ ra.`, `Shift “${n}” needs both start and end times.`, `シフト「${n}」の開始と終了を入力してください。`, `班次“${n}”需要填写上下班时间。`, `‘${n}’ 근무에 시작과 종료 시간이 필요해요.`],
+  e_pSame: (n) => [`Ca “${n}” có giờ vào và giờ ra trùng nhau.`, `Shift “${n}” has the same start and end.`, `シフト「${n}」の開始と終了が同じです。`, `班次“${n}”的上下班时间相同。`, `‘${n}’ 근무의 시작과 종료가 같아요.`],
+  e_pBrk: (n) => [`Ca “${n}” có thời gian nghỉ dài hơn cả ca.`, `Shift “${n}” has a break longer than the shift.`, `シフト「${n}」の休憩がシフトより長いです。`, `班次“${n}”的休息比班次还长。`, `‘${n}’ 근무의 휴게가 근무보다 길어요.`],
+  shopSaved: (n) => [`Đã lưu quán${n ? ` với ${n} ca thường làm` : ''}`, `Job saved${n ? ` with ${n} usual shift${n > 1 ? 's' : ''}` : ''}`, `バイト先を保存しました${n ? `（よく入るシフト${n}件）` : ''}`, `已保存店铺${n ? `，含 ${n} 个常用班次` : ''}`, `알바처를 저장했어요${n ? ` (자주 하는 근무 ${n}개)` : ''}`],
+  shopDeleted: ['Đã xoá quán', 'Job deleted', 'バイト先を削除しました', '已删除店铺', '알바처를 삭제했어요'],
+  newVac: ['Kỳ nghỉ mới', 'New school break', '新しい長期休業', '新的长假', '새 방학'],
+  nameL: ['Tên', 'Name', '名前', '名称', '이름'],
+  vacPh: ['Nghỉ hè', 'Summer break', '夏休み', '暑假', '여름방학'],
+  fromL: ['Từ ngày', 'From', '開始日', '开始日期', '시작일'],
+  toL: ['Đến ngày', 'To', '終了日', '结束日期', '종료일'],
+  vacHelp: (x) => [`Theo lịch nghỉ chính thức của trường (夏休み, 冬休み, 春休み). Tuần nằm trọn trong kỳ nghỉ dùng giới hạn ${x}/tuần.`, `Use your school’s official break dates (夏休み, 冬休み, 春休み). Weeks fully inside a break use the ${x}/week limit.`, `学校の公式な休業期間（夏休み・冬休み・春休み）を入力します。全日が休業中の週は週${x}の上限を使います。`, `按学校官方假期填写（夏休み、冬休み、春休み）。完全处于长假内的周使用每周 ${x} 上限。`, `학교 공식 방학 기간(夏休み, 冬休み, 春休み)에 맞춰 입력하세요. 방학에 완전히 포함된 주는 주 ${x} 한도를 적용해요.`],
+  delVac: ['Xoá kỳ nghỉ', 'Delete school break', '長期休業を削除', '删除长假', '방학 삭제'],
+  saveVac: ['Lưu kỳ nghỉ', 'Save school break', '長期休業を保存', '保存长假', '방학 저장'],
+  e_vac: ['Ngày bắt đầu phải trước ngày kết thúc.', 'The start date must be before the end date.', '開始日は終了日より前にしてください。', '开始日期必须早于结束日期。', '시작일은 종료일보다 앞이어야 해요.'],
+  vacSaved: ['Đã lưu kỳ nghỉ', 'School break saved', '長期休業を保存しました', '已保存长假', '방학을 저장했어요'],
+  vacDeleted: ['Đã xoá kỳ nghỉ', 'School break deleted', '長期休業を削除しました', '已删除长假', '방학을 삭제했어요'],
+  hoursL: ['Giờ làm', 'Hours', '勤務時間', '工作时间', '근무 시간'],
+  inWorking: (x) => [`vào ${x} · đang làm`, `in ${x} · working`, `${x}出勤・勤務中`, `${x} 上班 · 工作中`, `${x} 출근 · 근무 중`],
+  shiftHours: ['Số giờ của ca', 'Shift hours', 'シフトの時間', '班次工时', '근무 시간'],
+  dayHolSub: (h) => [`${h} · ngày lễ`, `${h} · holiday`, `${h}・祝日`, `${h} · 节假日`, `${h} · 공휴일`],
+  nShiftsDay: (n) => [`${n} ca trong ngày`, `${n} shift${n > 1 ? 's' : ''} this day`, `シフト${n}件`, `当天 ${n} 个班次`, `근무 ${n}건`],
+  noShiftSub: ['Chưa có ca', 'No shifts', 'シフトなし', '没有班次', '근무 없음'],
+  noShiftsDay: ['Chưa có ca nào trong ngày này.', 'No shifts on this day yet.', 'この日のシフトはまだありません。', '这天还没有班次。', '이 날 근무가 아직 없어요.'],
+  dayTotal: ['Tổng giờ trong ngày', 'Total for the day', 'この日の合計', '当天合计', '하루 합계'],
+  addShiftDay: ['Thêm ca ngày này', 'Add a shift on this day', 'この日にシフト追加', '在这天添加班次', '이 날 근무 추가'],
+  cancel: ['Huỷ', 'Cancel', 'キャンセル', '取消', '취소'],
+  smMorning: ['Ca sáng', 'Morning', '朝番', '早班', '오전'],
+  smLong: ['Ca dài', 'Long day', 'ロング', '长班', '종일'],
+  smEvening: ['Ca tối', 'Evening', '夜番', '晚班', '저녁'],
+  smEveLong: ['Ca tối dài', 'Long evening', '夜ロング', '长晚班', '긴 저녁'],
+  smNote: ['Nộp シフト trước thứ Sáu', 'Hand in your シフト by Friday', '金曜までにシフト提出', '周五前提交排班', '금요일까지 시프트 제출'],
+  sampleLoaded: ['Đã nạp dữ liệu mẫu', 'Sample data loaded', 'サンプルデータを読み込みました', '已载入示例数据', '샘플 데이터를 불러왔어요'],
+  sampleCleared: ['Đã xoá dữ liệu mẫu', 'Sample data cleared', 'サンプルデータを削除しました', '已清除示例数据', '샘플 데이터를 삭제했어요'],
+  allCleared: ['Đã xoá toàn bộ dữ liệu', 'All data deleted', 'すべてのデータを削除しました', '已删除全部数据', '모든 데이터를 삭제했어요'],
+  exported: ['Đã xuất bản sao lưu', 'Backup exported', 'バックアップを書き出しました', '已导出备份', '백업을 내보냈어요'],
+  exportFail: ['Không xuất được tệp ở chế độ xem này.', 'Can’t export a file in this view.', 'この表示ではファイルを書き出せません。', '此视图下无法导出文件。', '이 화면에서는 파일을 내보낼 수 없어요.'],
+  badJson: ['Tệp không đúng định dạng JSON.', 'The file isn’t valid JSON.', 'JSON形式のファイルではありません。', '文件不是有效的 JSON 格式。', '올바른 JSON 파일이 아니에요.'],
+  notBackup: ['Đây không phải tệp sao lưu của Sổ giờ Arubaito.', 'This isn’t an Arubaito backup file.', 'このアプリのバックアップファイルではありません。', '这不是本应用的备份文件。', '이 앱의 백업 파일이 아니에요.'],
+  importQ: ['Nhập bản sao lưu?', 'Import backup?', 'バックアップを復元しますか？', '导入备份？', '백업을 가져올까요?'],
+  importText: (a, b) => [`Tệp có ${a} ca và ${b} quán. Toàn bộ dữ liệu hiện tại sẽ được thay thế.`, `The file has ${a} shifts and ${b} jobs. All current data will be replaced.`, `シフト${a}件、バイト先${b}件が含まれています。現在のデータはすべて置き換えられます。`, `文件包含 ${a} 个班次和 ${b} 家店铺。当前所有数据将被替换。`, `근무 ${a}건, 알바처 ${b}곳이 들어 있어요. 현재 데이터가 모두 대체돼요.`],
+  replace: ['Thay thế', 'Replace', '置き換える', '替换', '대체'],
+  imported: (n) => [`Đã nhập ${n} ca`, `Imported ${n} shifts`, `シフト${n}件を読み込みました`, `已导入 ${n} 个班次`, `근무 ${n}건을 가져왔어요`],
+  cancelPunchQ: ['Huỷ chấm công?', 'Cancel clock-in?', '打刻を取り消しますか？', '取消打卡？', '출근 기록을 취소할까요?'],
+  cancelPunchMsg: ['Giờ vào ca vừa bấm sẽ bị bỏ, ca trở về giờ đã xếp.', 'The clock-in time will be discarded and the shift goes back to its schedule.', '出勤時刻は破棄され、シフトは予定の時刻に戻ります。', '刚才的上班打卡将被丢弃，班次恢复为排班时间。', '출근 시간이 삭제되고 근무는 예정 시간으로 돌아가요.'],
+  delShiftQ: ['Xoá ca này?', 'Delete this shift?', 'このシフトを削除しますか？', '删除这个班次？', '이 근무를 삭제할까요?'],
+  delShiftMsg: ['Bạn có thể hoàn tác ngay sau khi xoá.', 'You can undo right after deleting.', '削除直後なら元に戻せます。', '删除后可立即撤销。', '삭제 직후 실행 취소할 수 있어요.'],
+  copied: (d) => [`Đã chép sang ${d}`, `Copied to ${d}`, `${d}にコピーしました`, `已复制到 ${d}`, `${d}로 복사했어요`],
+  delShopQ: (n) => [`Xoá quán “${n}”?`, `Delete “${n}”?`, `「${n}」を削除しますか？`, `删除“${n}”？`, `‘${n}’을(를) 삭제할까요?`],
+  delShopN: (n) => [`${n} ca làm ở quán này cũng sẽ bị xoá.`, `${n} shifts at this job will also be deleted.`, `このバイト先のシフト${n}件も削除されます。`, `该店铺的 ${n} 个班次也会被删除。`, `이 알바처의 근무 ${n}건도 삭제돼요.`],
+  delShop0: ['Quán chưa có ca nào.', 'This job has no shifts.', 'このバイト先にシフトはありません。', '该店铺还没有班次。', '이 알바처에는 근무가 없어요.'],
+  clearAllQ: ['Xoá toàn bộ dữ liệu?', 'Delete all data?', 'すべてのデータを削除しますか？', '删除全部数据？', '모든 데이터를 삭제할까요?'],
+  clearAllText: (a, b) => [`Tất cả ${a} ca, ${b} quán và cài đặt sẽ bị xoá vĩnh viễn. Nên xuất sao lưu trước.`, `All ${a} shifts, ${b} jobs and settings will be permanently deleted. Export a backup first.`, `シフト${a}件、バイト先${b}件、設定がすべて完全に削除されます。先にバックアップを書き出してください。`, `全部 ${a} 个班次、${b} 家店铺和设置将被永久删除。建议先导出备份。`, `근무 ${a}건, 알바처 ${b}곳과 설정이 영구 삭제돼요. 먼저 백업을 내보내세요.`],
+  deleteAll: ['Xoá hết', 'Delete all', 'すべて削除', '全部删除', '모두 삭제'],
+};
+function T(k, ...a) {
+  const v = STR[k];
+  const row = typeof v === 'function' ? v(...a) : v;
+  return row[LI] ?? row[0];
+}
+function setLang(l) {
+  LI = Math.max(0, LANGS.indexOf(l));
+  DOW = DOWS[LI]; DOW_LONG = DOWS_LONG[LI];
+  document.documentElement.lang = LANGS[LI];
+  document.title = T('appName');
+}
+function detectLang() { // first supported browser language; English for anything else
+  for (const l of navigator.languages || [navigator.language || '']) { const c = String(l).slice(0, 2).toLowerCase(); if (LANGS.includes(c)) return c; }
+  return 'en';
+}
 
 /* ---------- durations in minutes ---------- */
 const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
@@ -577,6 +990,7 @@ const I = {
   clockOut: svg('<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M9 12h11M16 8l4 4-4 4"/>'),
   coffee: svg('<path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM16 10.5h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5v2.5M12 3.5v2.5"/>'),
   play: svg('<path d="M8 5.5v13l10-6.5z"/>'),
+  globe: svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/>'),
   today: svg('<rect x="3.5" y="5" width="17" height="15.5" rx="4"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none"/>'),
 };
 
@@ -590,13 +1004,13 @@ const SHOP_COLORS = ['#2F6FDE', '#E07A1F', '#169B6B', '#A54FC4', '#C99A12', '#15
 let docs = {};
 let _st = null;
 let idx = { day: {}, byDate: {} };
-const ui = { tab: 'week', ws: null, ym: null };
+const ui = { tab: 'week', ws: null, ym: null, lang: 'vi' };
 
 const settings = () => _st || (_st = { ...DEFAULTS, ...((docs.config && docs.config.settings) || {}) });
 const shops = () => (docs.config && docs.config.shops) || [];
 const shopById = (id) => shops().find((s) => s.id === id);
 const shopColor = (id) => (shopById(id) || {}).color || '#64748B';
-const shopName = (id) => (shopById(id) || {}).name || 'Quán đã xoá';
+const shopName = (id) => (shopById(id) || {}).name || T('deletedShop');
 const presetsOf = (id) => ((shopById(id) || {}).presets || []).filter((p) => isTime(p.start) && isTime(p.end));
 const presetLabel = (p) => `${p.name ? esc(p.name) + ' · ' : ''}<span class="t">${esc(p.start)}–${esc(p.end)}</span>`;
 const samePreset = (p, s) => p.start === s.start && p.end === s.end && (Number(p.breakMin) || 0) === (Number(s.breakMin) || 0);
@@ -679,7 +1093,6 @@ function jpHolidays(y) {
 const holidayName = (d) => { const y = Number(d.slice(0, 4)); return (HOLIDAYS[y] || (HOLIDAYS[y] = jpHolidays(y)))[d] || ''; };
 
 /* ---------- pay: wage by day type, night premium, transport ---------- */
-const DAY_KIND = { wd: 'Ngày thường', wkd: 'T7, CN', hol: 'Ngày lễ 祝日' };
 const dayKind = (d) => (holidayName(d) ? 'hol' : dowOf(d) === 0 || dowOf(d) === 6 ? 'wkd' : 'wd');
 function wageOf(shop, kind) { // empty weekend wage = weekday wage; empty holiday wage = weekend wage
   const wd = Number(shop.wage) || 0, wkd = Number(shop.wageWeekend) || wd, hol = Number(shop.wageHoliday) || wkd;
@@ -726,8 +1139,6 @@ function payDate(shop, ym) {
   const m = addMonths(ym, shop.payMonth === 0 ? 0 : 1);
   return `${m}-${pad(Math.min(d, daysInMonth(m)))}`;
 }
-const closeText = (shop) => (Number(shop.closeDay) ? `chốt ngày ${shop.closeDay}` : 'chốt cuối tháng');
-const payText = (shop) => (Number(shop.payDay) ? `nhận ngày ${shop.payDay} ${shop.payMonth === 0 ? 'cùng tháng' : 'tháng sau'}` : '');
 function monthPay(ym) {
   const t = todayStr(), all = allShifts(), rows = [];
   let total = 0, done = 0;
@@ -758,15 +1169,17 @@ function render() {
   $('#view').innerHTML = ui.tab === 'week' ? viewWeek() : ui.tab === 'month' ? viewMonth() : ui.tab === 'shops' ? viewShops() : viewSettings();
   for (const t of TABS) { const b = $('#tab-' + t); b.classList.toggle('on', ui.tab === t); b.setAttribute('aria-current', ui.tab === t ? 'page' : 'false'); }
   $('#tab-week').classList.toggle('badged', currentWeekOver());
+  $('.tabbar').setAttribute('aria-label', T('nav'));
+  for (const tb of TABS) { const b = $('#tab-' + tb), l = T('tab_' + tb); b.setAttribute('aria-label', l); $('.tl', b).textContent = l; }
 }
 
-function greeting() { const h = new Date().getHours(); return h < 11 ? 'Chào buổi sáng' : h < 13 ? 'Chào buổi trưa' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối'; }
+function greeting() { const h = new Date().getHours(); return T('greet', h < 11 ? 0 : h < 13 ? 1 : h < 18 ? 2 : 3); }
 function alertBox(title, body, extra = '', note = false) {
   return `<section class="alert ${note ? 'note' : ''}" ${note ? '' : 'role="alert"'}><span class="alert-ico">${note ? I.sparkle : I.warn}</span><div><h3>${title}</h3>${body}${extra}</div></section>`;
 }
 const hasSample = () => shops().some((s) => s.sample) || allShifts().some((s) => s.sample);
 function sampleBanner() {
-  return hasSample() ? alertBox('Đang xem dữ liệu mẫu', '<p class="muted">Quán và ca có nhãn “Mẫu” chỉ để bạn thử. Xoá đi rồi nhập lịch thật của bạn.</p>', '<button class="cta sm light" data-act="sample-clear" style="margin-top:12px">Xoá dữ liệu mẫu</button>', true) : '';
+  return hasSample() ? alertBox(T('sampleTitle'), `<p class="muted">${T('sampleBody')}</p>`, `<button class="cta sm light" data-act="sample-clear" style="margin-top:12px">${T('sampleClear')}</button>`, true) : '';
 }
 
 /* the hero illustration: Mt Fuji whose sky goes from clear day (ok) to golden hour (near) to red sunset (over) */
@@ -785,46 +1198,45 @@ const heroArt = () => `<svg class="art" viewBox="0 0 390 390" preserveAspectRati
   <rect width="390" height="390" fill="url(#hs-fade)"/></svg>`;
 function weekHero(w, rel) {
   const scale = Math.max(w.total, w.limit) || 1;
-  const badge = { ok: 'An toàn', near: 'Sắp chạm giới hạn', over: 'Vượt giới hạn' }[w.status];
-  const rest = w.status === 'over' ? `vượt ${fmtH(w.total - w.limit)}` : `còn ${fmtH(w.limit - w.total)} trước khi chạm ${fmtH(w.limit)}`;
+  const badge = T('st_' + w.status);
+  const rest = w.status === 'over' ? T('heroOver', fmtH(w.total - w.limit)) : T('heroLeft', fmtH(w.limit - w.total), fmtH(w.limit));
   return `<section class="hero ${w.status}">${heroArt()}<div class="hero-in">
     <div class="hero-top"><span class="glass glass-chip">${rel} · ${fmtDM(w.ws)} – ${fmtDM(w.we)}</span><span class="glass glass-circle">${statusIcon(w.status)}</span></div>
-    <div class="hero-bottom"><small>Tổng giờ làm trong tuần</small>
+    <div class="hero-bottom"><small>${T('heroTotal')}</small>
       <div class="hero-num"><b>${fmtH(w.total)}</b><span>/ ${fmtH(w.limit)}</span></div>
       <div class="hero-meta"><span class="o-chip">${statusIcon(w.status)}${badge}</span><span>${rest}</span></div>
-      <div class="thin" role="img" aria-label="${fmtH(w.total)} trên ${fmtH(w.limit)}"><i style="width:${(Math.min(w.total, w.limit) / scale) * 100}%"></i>${w.total > w.limit ? `<u style="width:${((w.total - w.limit) / scale) * 100}%"></u>` : ''}</div>
-      <button class="cta-glass glass press" data-act="go-month" data-ym="${w.ws.slice(0, 7)}"><span>Xem cả tháng</span><span class="cta-dot">${I.arrow}</span></button></div></div></section>`;
+      <div class="thin" role="img" aria-label="${T('ofX', fmtH(w.total), fmtH(w.limit))}"><i style="width:${(Math.min(w.total, w.limit) / scale) * 100}%"></i>${w.total > w.limit ? `<u style="width:${((w.total - w.limit) / scale) * 100}%"></u>` : ''}</div>
+      <button class="cta-glass glass press" data-act="go-month" data-ym="${w.ws.slice(0, 7)}"><span>${T('seeMonth')}</span><span class="cta-dot">${I.arrow}</span></button></div></div></section>`;
 }
 function weekStrip(ws) {
   const t = todayStr(), os = overIds(ws), list = weekShifts(ws);
   return `<div class="days">${[...Array(7)].map((_, i) => {
     const d = addDays(ws, i), tot = idx.day[d] || 0, hol = holidayName(d), over = list.some((s) => s.date === d && os.has(s.id));
     return `<button class="day ${d === t ? 'today' : ''} ${tot ? 'has' : ''} ${over ? 'over' : ''} ${hol ? 'hol' : ''}" data-act="day" data-date="${d}" aria-label="${DOW_LONG[dowOf(d)]} ${fmtDM(d)}${hol ? ' ' + hol : ''}: ${fmtH(tot)}">
-      <small>${hol ? 'Lễ' : DOW[dowOf(d)]}</small><b>${Number(d.slice(8))}</b><em>${tot ? fmtH(tot) : '·'}</em></button>`;
+      <small>${hol ? T('holShort') : DOW[dowOf(d)]}</small><b>${Number(d.slice(8))}</b><em>${tot ? fmtH(tot) : '·'}</em></button>`;
   }).join('')}</div>`;
 }
 function shiftCard(s, os) {
   const t = todayStr(), over = !!(os && os.has(s.id)), shop = shopById(s.shopId), p = shiftPay(s, shop || {});
   const ps = punchState(s), act = hasActual(s);
-  const state = [ps ? 'Đang làm' : act ? 'Đã chấm công' : s.date > t ? 'Dự kiến' : s.date === t ? 'Hôm nay' : 'Đã làm'];
-  if (holidayName(s.date)) state.push('Ngày lễ');
-  if (p.night) state.push(`đêm ${fmtH(p.night)}`);
-  const tags = (over ? '<span class="tag red">Vượt giới hạn</span>' : '') + (ps ? `<span class="tag live">${ps === 'break' ? 'Đang nghỉ' : 'Đang trong ca'}</span>` : '')
-    + (act && s.actual.auto ? '<span class="tag live">Quên ra ca · tính theo lịch</span>' : '')
-    + (act ? `<span class="tag ok">Thực ${esc(s.actual.start)}–${esc(s.actual.end)}${Number(s.actual.breakMin) ? ` · nghỉ ${Number(s.actual.breakMin)}′` : ''}${diffText(s)}</span>` : '') + (s.sample ? '<span class="tag">Mẫu</span>' : '');
-  return `<div class="swipe"><button class="swipe-del" data-act="swipe-del" data-id="${esc(s.id)}" aria-label="Xoá ca">${I.trash}<span>Xoá</span></button>
+  const state = [T(ps ? 's_live' : act ? 's_clocked' : s.date > t ? 's_planned' : s.date === t ? 's_today' : 's_done')];
+  if (holidayName(s.date)) state.push(T('s_hol'));
+  if (p.night) state.push(T('nightX', fmtH(p.night)));
+  const tags = (over ? `<span class="tag red">${T('st_over')}</span>` : '') + (ps ? `<span class="tag live">${T(ps === 'break' ? 'tagOnBreak' : 'tagInShift')}</span>` : '')
+    + (act && s.actual.auto ? `<span class="tag live">${T('tagForgot')}</span>` : '')
+    + (act ? `<span class="tag ok">${T('actualX', esc(s.actual.start), esc(s.actual.end))}${Number(s.actual.breakMin) ? T('brkX', Number(s.actual.breakMin)) : ''}${diffText(s)}</span>` : '') + (s.sample ? `<span class="tag">${T('sampleTag')}</span>` : '');
+  return `<div class="swipe"><button class="swipe-del" data-act="swipe-del" data-id="${esc(s.id)}" aria-label="${T('delShift')}">${I.trash}<span>${T('del')}</span></button>
     <button class="shift ${over ? 'over' : ''}" data-act="edit" data-id="${esc(s.id)}">
       <span class="thumb"><b>${s.date.slice(8)}</b><small>${DOW[dowOf(s.date)]}</small></span>
       <span class="shift-main"><small>${state.join(' · ')}</small>
         <span class="shift-shop"><i class="dot" style="background:${(shop && shop.color) || '#8E8E93'}"></i><span>${esc(shopName(s.shopId))}</span></span>
-        <span class="shift-time">${esc(s.start)} – ${esc(s.end)}${isOvernight(s) ? ' (+1)' : ''}${Number(s.breakMin) ? ` · nghỉ ${Number(s.breakMin)}′` : ''}${p.total ? ` · ${yen(p.total)}` : ''}</span>
+        <span class="shift-time">${esc(s.start)} – ${esc(s.end)}${isOvernight(s) ? ' (+1)' : ''}${Number(s.breakMin) ? T('brkX', Number(s.breakMin)) : ''}${p.total ? ` · ${yen(p.total)}` : ''}</span>
         ${tags ? `<span style="margin-top:4px">${tags}</span>` : ''}</span>
       <span class="shift-dur">${fmtH(shiftMin(s))}</span></button></div>`;
 }
 function untilText(min) {
-  if (min >= 2880) return `${Math.floor(min / 1440)} ngày`;
-  const h = Math.floor(min / 60), m = min % 60;
-  return h ? `${h} giờ${m ? ` ${m} phút` : ''}` : `${m} phút`;
+  if (min >= 2880) return T('nDays', Math.floor(min / 1440));
+  return T('untilHM', Math.floor(min / 60), min % 60);
 }
 /* ---------- time clock: 出勤 / 休憩 / 退勤 on a scheduled shift ----------
    While clocked in a shift carries punch = {in, breaks:[{s, e?}]} (epoch ms). Clocking out turns it into actual = {start, end, breakMin}. */
@@ -858,7 +1270,7 @@ function sweepForgotten(force = null) { // close stale clocks; force = a shift i
   }
   if (!done.length) return 0;
   commit(keys);
-  toast(done.length === 1 ? `Ca ${fmtDM(done[0].date)} ở ${shopName(done[0].shopId)} quên ra ca: đã tính giờ ra theo lịch ${done[0].end}` : `${done.length} ca quên ra ca: đã tính giờ ra theo lịch`);
+  toast(done.length === 1 ? T('autoOut1', fmtDM(done[0].date), shopName(done[0].shopId), done[0].end) : T('autoOutN', done.length));
   return done.length;
 }
 const fmtShort = (m) => (Math.abs(m) >= 60 ? fmtH(Math.abs(m)) : Math.abs(m) + '′');
@@ -885,21 +1297,21 @@ function punchPanel(n) {
   if (!st) {
     if (n.start - n.nowMin > PUNCH_EARLY) return '';
     const late = n.nowMin - n.start;
-    return `<div class="punch"><div class="punch-row"><span class="punch-f">${late > 0 ? `Đã qua giờ vào ${late >= 60 ? fmtH(late) : late + ' phút'}` : `Vào ca lúc ${esc(s.start)} · bấm khi bắt đầu làm`}</span></div>
-      <button class="cta dark block" data-act="punch" data-k="in" data-id="${id}">${I.clockIn}Vào ca <span class="ja" style="color:inherit;opacity:.7">出勤</span></button></div>`;
+    return `<div class="punch"><div class="punch-row"><span class="punch-f">${late > 0 ? T('pastStart', late >= 60 ? fmtH(late) : T('mins', late)) : T('startsAt', esc(s.start))}</span></div>
+      <button class="cta dark block" data-act="punch" data-k="in" data-id="${id}">${I.clockIn}${T('clockIn')} <span class="ja" style="color:inherit;opacity:.7">出勤</span></button></div>`;
   }
   const p = s.punch, tl = punchTally(p), b = p.breaks || [], lastB = b[b.length - 1];
   const overrun = n.nowMin - n.end;
-  const foot = [`Vào ${hmOf(p.in)}`];
-  if (tl.brk) foot.push(`nghỉ ${tl.brk}′`);
-  foot.push(`ra ca dự kiến ${esc(s.end)}`);
-  const warn = overrun > 60 ? `<p class="punch-f warn">Đã quá giờ ra ca ${fmtH(overrun)}. Quên bấm? Nếu không bấm, sau ${fmtH(AUTO_OUT_AFTER)} app tự tính giờ ra theo lịch (${esc(s.end)}).</p>` : '';
+  const foot = [T('inAt', hmOf(p.in))];
+  if (tl.brk) foot.push(T('brkM', tl.brk));
+  foot.push(T('plannedOut', esc(s.end)));
+  const warn = overrun > 60 ? `<p class="punch-f warn">${T('overrunWarn', fmtH(overrun), fmtH(AUTO_OUT_AFTER), esc(s.end))}</p>` : '';
   const big = st === 'break'
-    ? `<div class="punch-big"><b>${minOf(Date.now()) - minOf(lastB.s)}′</b><span>đang nghỉ từ ${hmOf(lastB.s)}</span></div><span class="punch-st brk"><i></i>休憩中</span>`
-    : `<div class="punch-big"><b>${fmtH(tl.net)}</b><span>/ ${fmtH(planNet)} dự kiến</span></div><span class="punch-st"><i></i>勤務中</span>`;
+    ? `<div class="punch-big"><b>${minOf(Date.now()) - minOf(lastB.s)}′</b><span>${T('breakSince', hmOf(lastB.s))}</span></div><span class="punch-st brk"><i></i>${T('stBreak')}</span>`
+    : `<div class="punch-big"><b>${fmtH(tl.net)}</b><span>${T('ofPlanned', fmtH(planNet))}</span></div><span class="punch-st"><i></i>${T('stWork')}</span>`;
   const btns = st === 'break'
-    ? `<button class="cta dark" data-act="punch" data-k="brk-end" data-id="${id}">${I.play}Hết nghỉ</button><button class="cta white" data-act="punch" data-k="out" data-id="${id}">${I.clockOut}Ra ca</button>`
-    : `<button class="cta white" data-act="punch" data-k="brk" data-id="${id}">${I.coffee}Nghỉ <span class="ja">休憩</span></button><button class="cta dark" data-act="punch" data-k="out" data-id="${id}">${I.clockOut}Ra ca <span class="ja" style="color:inherit;opacity:.7">退勤</span></button>`;
+    ? `<button class="cta dark" data-act="punch" data-k="brk-end" data-id="${id}">${I.play}${T('breakEnd')}</button><button class="cta white" data-act="punch" data-k="out" data-id="${id}">${I.clockOut}${T('clockOut')}</button>`
+    : `<button class="cta white" data-act="punch" data-k="brk" data-id="${id}">${I.coffee}${T('breakBtn')} <span class="ja">休憩</span></button><button class="cta dark" data-act="punch" data-k="out" data-id="${id}">${I.clockOut}${T('clockOut')} <span class="ja" style="color:inherit;opacity:.7">退勤</span></button>`;
   return `<div class="punch"><div class="punch-row">${big}</div><p class="punch-f">${foot.join(' · ')}</p>${warn}<div class="btn-row">${btns}</div></div>`;
 }
 function nextCard() {
@@ -910,14 +1322,14 @@ function nextCard() {
   const money = p.total ? p.total + (firstOfDay ? Number(shop.transport) || 0 : 0) : 0;
   const chips = [];
   if (money) chips.push(`${I.yen}${yen(money)}`);
-  if (Number(s.breakMin)) chips.push(`${I.hourglass}Nghỉ ${Number(s.breakMin)}′`);
-  if (p.night) chips.push(`${I.moon}Đêm ${fmtH(p.night)}`);
+  if (Number(s.breakMin)) chips.push(`${I.hourglass}${T('BrkM', Number(s.breakMin))}`);
+  if (p.night) chips.push(`${I.moon}${T('NightX', fmtH(p.night))}`);
   if (holidayName(s.date)) chips.push(`${I.cal}${esc(holidayName(s.date))}`);
-  const sub = st === 'break' ? 'đang nghỉ giải lao' : st ? 'đã vào ca' : n.live ? `đã đến giờ · còn ${untilText(n.end - n.nowMin)}` : `bắt đầu sau ${untilText(n.start - n.nowMin)}`;
-  return `<div class="sec"><h2>${st ? 'Đang trong ca' : 'Ca tiếp theo'}</h2><span class="muted" style="font-size:14px">${sub}</span></div>
+  const sub = st === 'break' ? T('subBreak') : st ? T('subIn') : n.live ? T('subLive', untilText(n.end - n.nowMin)) : T('subSoon', untilText(n.start - n.nowMin));
+  return `<div class="sec"><h2>${T(st ? 'hOnShift' : 'hNext')}</h2><span class="muted" style="font-size:14px">${sub}</span></div>
     <div class="next">
       <button class="next-top press" data-act="edit" data-id="${esc(s.id)}"><span class="thumb"><b>${Number(s.date.slice(8))}</b><small>${DOW[dowOf(s.date)]}</small></span>
-        <span class="next-main"><small>${DOW_LONG[dowOf(s.date)]}, ${fmtDM(s.date)}</small><b>${esc(shopName(s.shopId))}</b><span>${esc(s.start)} – ${esc(s.end)} · ${fmtH(planMin(s))} làm việc</span></span><span class="go">${I.arrow}</span></button>
+        <span class="next-main"><small>${longDay(s.date)}</small><b>${esc(shopName(s.shopId))}</b><span>${esc(s.start)} – ${esc(s.end)} · ${T('workX', fmtH(planMin(s)))}</span></span><span class="go">${I.arrow}</span></button>
       ${chips.length ? `<span class="next-foot"><span class="chips-s">${chips.map((c) => `<span class="chip-s">${c}</span>`).join('')}</span></span>` : ''}
       ${punchPanel(n)}</div>`;
 }
@@ -925,12 +1337,12 @@ function nextCard() {
 function viewWeek() {
   const st = settings(), t = todayStr(), cur = weekStartOf(t), ws = ui.ws, w = weekStats(ws);
   const diff = Math.round(daysBetween(cur, ws) / 7);
-  const rel = diff === 0 ? 'Tuần này' : diff === 1 ? 'Tuần sau' : diff === -1 ? 'Tuần trước' : diff > 0 ? `${diff} tuần tới` : `${-diff} tuần trước`;
+  const rel = T('relWeek', diff);
   let html = `<main class="wrap stack">
-    <header class="head"><div><h1>${greeting()}</h1><p>Tuần này còn làm được <b style="color:var(--ink);font-weight:600">${fmtH(availableOn(t))}</b></p></div>${circ('wk-today', I.today, 'Về tuần này')}</header>
-    <div class="bar"><div class="switcher"><button class="arrow" data-act="wk-prev" aria-label="Tuần trước">${I.prev}</button>
-      <div class="lbl-c"><b>${rel}${isVacWeek(ws) ? ' · kỳ nghỉ' : ''}</b><small>${fmtDM(ws)} – ${fmtDM(w.we)}</small></div>
-      <button class="arrow" data-act="wk-next" aria-label="Tuần sau">${I.next}</button></div>${circ('add', I.plus, 'Thêm ca', 'dark')}</div>
+    <header class="head"><div><h1>${greeting()}</h1><p>${T('weekCanWork', `<b style="color:var(--ink);font-weight:600">${fmtH(availableOn(t))}</b>`)}</p></div>${circ('wk-today', I.today, T('toThisWeek'))}</header>
+    <div class="bar"><div class="switcher"><button class="arrow" data-act="wk-prev" aria-label="${T('prevWeek')}">${I.prev}</button>
+      <div class="lbl-c"><b>${rel}${isVacWeek(ws) ? T('vacSuffix') : ''}</b><small>${fmtDM(ws)} – ${fmtDM(w.we)}</small></div>
+      <button class="arrow" data-act="wk-next" aria-label="${T('nextWeek')}">${I.next}</button></div>${circ('add', I.plus, T('addShift'), 'dark')}</div>
     ${weekStrip(ws)}`;
   const nc = diff === 0 ? nextCard() : '', urgent = nc.includes('class="punch"'); // time to clock: put the clock card above the hero
   html += urgent ? nc + weekHero(w, rel) : weekHero(w, rel);
@@ -939,32 +1351,32 @@ function viewWeek() {
     const over = w.total - w.limit, nws = addDays(ws, 7), nw = weekStats(nws);
     const futureMin = weekShifts(ws).filter((s) => s.date > t).reduce((a, s) => a + shiftMin(s), 0);
     const tips = [];
-    if (futureMin > 0) tips.push(`Tuần này còn ${fmtH(futureMin)} ca chưa làm. Bớt ít nhất ${fmtH(over)} để về dưới giới hạn.`);
-    tips.push(`Tuần sau (${fmtDM(nws)} – ${fmtDM(addDays(nws, 6))}) đang xếp ${fmtH(nw.total)} / ${fmtH(nw.limit)}.`);
-    html += alertBox(`Vượt ${fmtH(over)} so với giới hạn ${fmtH(w.limit)}/tuần`,
-      `<p>Các ca có nhãn “Vượt giới hạn” là phần làm vượt. Hãy rút lại lịch và báo quản lý điều chỉnh ca.</p><ul>${tips.map((x) => `<li>${x}</li>`).join('')}</ul>`,
-      `<button class="cta sm red" data-act="wk-next">Xem lịch tuần sau ${I.next}</button>`);
+    if (futureMin > 0) tips.push(T('tipFuture', fmtH(futureMin), fmtH(over)));
+    tips.push(T('tipNext', fmtDM(nws), fmtDM(addDays(nws, 6)), fmtH(nw.total), fmtH(nw.limit)));
+    html += alertBox(T('overTitle', fmtH(over), fmtH(w.limit)),
+      `<p>${T('overBody')}</p><ul>${tips.map((x) => `<li>${x}</li>`).join('')}</ul>`,
+      `<button class="cta sm red" data-act="wk-next">${T('seeNextWeek')} ${I.next}</button>`);
   }
   html += sampleBanner();
   if (!allShifts().length && !shops().length) {
-    html += `<section class="card"><div class="card-h"><h2>Bắt đầu ghi giờ làm</h2></div>
+    html += `<section class="card"><div class="card-h"><h2>${T('startTitle')}</h2></div>
       <ol style="margin:0 0 16px;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:15px">
-        <li>Lưu quán ở tab Quán: tên, 時給 và các ca hay làm.</li>
-        <li>Thêm ca: chọn quán, chạm vào ca, chọn ngày là xong.</li>
-        <li>App cộng giờ, tính lương và báo đỏ khi tuần vượt ${fmtH(st.weekLimit * 60)}.</li></ol>
-      <div class="btn-row"><button class="cta dark" data-act="shop-new">${I.plus}Thêm quán</button><button class="cta light" data-act="sample-load">Xem dữ liệu mẫu</button></div></section>`;
+        <li>${T('start1')}</li>
+        <li>${T('start2')}</li>
+        <li>${T('start3', fmtH(st.weekLimit * 60))}</li></ol>
+      <div class="btn-row"><button class="cta dark" data-act="shop-new">${I.plus}${T('addShop')}</button><button class="cta light" data-act="sample-load">${T('sampleLoad')}</button></div></section>`;
   }
   if (nc && !urgent) html += nc;
 
   const list = weekShifts(ws), os = overIds(ws), pay = payTotal(list);
   const left = Math.max(0, w.limit - w.total);
-  html += `<div class="tiles">${tile(I.target, fmtH(left), 'Còn lại trong tuần', left ? '' : 'bad')}${tile(I.list, list.length, 'Ca trong tuần')}${tile(I.yen, pay ? yen(pay) : '—', 'Lương ước tính')}</div>`;
-  html += `<div class="sec"><h2>Ca trong tuần <span>${list.length}</span></h2>${list.length ? '<span class="muted" style="font-size:13.5px">vuốt trái để xoá</span>' : ''}</div>`;
+  html += `<div class="tiles">${tile(I.target, fmtH(left), T('tLeftWeek'), left ? '' : 'bad')}${tile(I.list, list.length, T('tShiftsWeek'))}${tile(I.yen, pay ? yen(pay) : '—', T('tEstPay'))}</div>`;
+  html += `<div class="sec"><h2>${T('tShiftsWeek')} <span>${list.length}</span></h2>${list.length ? `<span class="muted" style="font-size:13.5px">${T('swipeHint')}</span>` : ''}</div>`;
   html += list.length ? `<div class="stack-s">${list.map((s) => shiftCard(s, os)).join('')}</div>`
-    : `<div class="empty-line"><span>Chưa có ca nào trong tuần này.</span><button class="cta sm dark" data-act="add">${I.plus}Thêm ca</button></div>`;
+    : `<div class="empty-line"><span>${T('noShiftsWeek')}</span><button class="cta sm dark" data-act="add">${I.plus}${T('addShift')}</button></div>`;
   const by = payOf(list), ids = Object.keys(by).sort((a, b) => by[b].min - by[a].min);
   if (ids.length > 1) {
-    html += `<div class="sec"><h2>Theo quán</h2></div><section class="list">${ids.map((k) => `<div class="li">${avatar(shopById(k), 'sm')}
+    html += `<div class="sec"><h2>${T('byShop')}</h2></div><section class="list">${ids.map((k) => `<div class="li">${avatar(shopById(k), 'sm')}
       <span class="li-main"><b>${esc(shopName(k))}</b></span><span class="li-end"><b style="color:var(--ink);font-weight:600">${fmtH(by[k].min)}</b>${by[k].total ? `· ${yen(by[k].total)}` : ''}</span></div>`).join('')}</section>`;
   }
   return html + '</main>';
@@ -973,40 +1385,40 @@ function viewWeek() {
 function viewMonth() {
   const st = settings(), t = todayStr(), ym = ui.ym, m = monthStats(ym), mode = ui.mseg === 'pay' ? 'pay' : 'hours';
   const diff = (Number(ym.slice(0, 4)) - Number(t.slice(0, 4))) * 12 + Number(ym.slice(5)) - Number(t.slice(5, 7));
-  const rel = diff === 0 ? 'Tháng này' : diff === 1 ? 'Tháng sau' : diff === -1 ? 'Tháng trước' : diff > 0 ? `${diff} tháng tới` : `${-diff} tháng trước`;
+  const rel = T('relMonth', diff), mo = Number(ym.slice(5));
   let html = `<main class="wrap stack">
-    <header class="head-c">${circ('mo-prev', I.prev, 'Tháng trước')}<div class="title"><b>Tháng ${Number(ym.slice(5))}, ${ym.slice(0, 4)}</b><small>${rel} · ${fmtDM(m.first)} – ${fmtDM(m.last)}</small></div>${circ('mo-next', I.next, 'Tháng sau')}</header>
-    <div class="pills" role="tablist">${[['hours', 'Tổng quan'], ['pay', 'Lương']].map(([v, l]) => `<button class="pill ${mode === v ? 'on' : ''}" role="tab" aria-selected="${mode === v}" data-act="mseg" data-v="${v}">${l}</button>`).join('')}</div>`;
-  if (diff !== 0) html += '<div style="display:flex;justify-content:flex-end"><button class="ulink" data-act="mo-today">Về tháng này</button></div>';
+    <header class="head-c">${circ('mo-prev', I.prev, T('prevMonth'))}<div class="title"><b>${T('monthTitle', ym.slice(0, 4), mo)}</b><small>${rel} · ${fmtDM(m.first)} – ${fmtDM(m.last)}</small></div>${circ('mo-next', I.next, T('nextMonth'))}</header>
+    <div class="pills" role="tablist">${[['hours', T('segOverview')], ['pay', T('segPay')]].map(([v, l]) => `<button class="pill ${mode === v ? 'on' : ''}" role="tab" aria-selected="${mode === v}" data-act="mseg" data-v="${v}">${l}</button>`).join('')}</div>`;
+  if (diff !== 0) html += `<div style="display:flex;justify-content:flex-end"><button class="ulink" data-act="mo-today">${T('toThisMonth')}</button></div>`;
 
   if (mode === 'pay') {
     const pay = monthPay(ym);
-    if (!pay.rows.length) return html + `<div class="empty-line"><span>Chưa có ca nào trong kỳ lương chốt tháng ${Number(ym.slice(5))}.</span><button class="cta sm dark" data-act="add">${I.plus}Thêm ca</button></div></main>`;
+    if (!pay.rows.length) return html + `<div class="empty-line"><span>${T('payEmpty', mo)}</span><button class="cta sm dark" data-act="add">${I.plus}${T('addShift')}</button></div></main>`;
     const days = [...new Set(pay.rows.filter((r) => r.pd && !r.noWage).map((r) => r.pd))].sort();
-    html += `<section class="pay-hero"><span class="k">Lương dự tính · kỳ chốt tháng ${Number(ym.slice(5))}</span>
-      <b class="pay-big">${pay.total ? yen(pay.total) : '—'}</b><span class="s">Đã làm ${yen(pay.done)} · trước thuế, gồm cả ca đã xếp lịch</span>
-      ${days.length ? `<div class="pay-dates">${days.map((d) => `<span>Nhận ${fmtDM(d)} · ${yen(pay.rows.filter((r) => r.pd === d).reduce((a, r) => a + r.b.total, 0))}</span>`).join('')}</div>` : ''}</section>
-      <div class="sec"><h2>Theo quán <span>${pay.rows.length}</span></h2></div>`;
+    html += `<section class="pay-hero"><span class="k">${T('payHeroK', mo)}</span>
+      <b class="pay-big">${pay.total ? yen(pay.total) : '—'}</b><span class="s">${T('payHeroS', yen(pay.done))}</span>
+      ${days.length ? `<div class="pay-dates">${days.map((d) => `<span>${T('payOn', fmtDM(d), yen(pay.rows.filter((r) => r.pd === d).reduce((a, r) => a + r.b.total, 0)))}</span>`).join('')}</div>` : ''}</section>
+      <div class="sec"><h2>${T('byShop')} <span>${pay.rows.length}</span></h2></div>`;
     const open = ui.payOpen === undefined ? pay.rows[0].shop.id : ui.payOpen;
     for (const r of pay.rows) {
       const { shop, b } = r, isOpen = open === shop.id;
-      const rows = [`<div><p class="k">Kỳ lương</p><div class="acc-row"><span>${fmtDM(r.per.start)} – ${fmtDM(r.per.end)}</span><b>${fmtH(b.min)}</b></div></div>`];
-      rows.push(...['wd', 'wkd', 'hol'].filter((k) => b.kinds[k]).map((k) => `<div><p class="k">${DAY_KIND[k]}</p><div class="acc-row"><span>${fmtH(b.kinds[k].min)} × ${yen(b.kinds[k].wage)}</span><b>${yen(b.kinds[k].yen)}</b></div></div>`));
-      if (b.nightMin) rows.push(`<div><p class="k">Phụ cấp đêm +${nightPctOf(shop)}% · 22:00–5:00</p><div class="acc-row"><span>${fmtH(b.nightMin)}</span><b>${yen(b.nightYen)}</b></div></div>`);
-      if (Number(shop.transport)) rows.push(`<div><p class="k">Tiền tàu 交通費</p><div class="acc-row"><span>${b.days.size} ngày × ${yen(shop.transport)}</span><b>${yen(b.transport)}</b></div></div>`);
+      const rows = [`<div><p class="k">${T('payPeriod')}</p><div class="acc-row"><span>${fmtDM(r.per.start)} – ${fmtDM(r.per.end)}</span><b>${fmtH(b.min)}</b></div></div>`];
+      rows.push(...['wd', 'wkd', 'hol'].filter((k) => b.kinds[k]).map((k) => `<div><p class="k">${T('dk_' + k)}</p><div class="acc-row"><span>${fmtH(b.kinds[k].min)} × ${yen(b.kinds[k].wage)}</span><b>${yen(b.kinds[k].yen)}</b></div></div>`));
+      if (b.nightMin) rows.push(`<div><p class="k">${T('nightRow', nightPctOf(shop))}</p><div class="acc-row"><span>${fmtH(b.nightMin)}</span><b>${yen(b.nightYen)}</b></div></div>`);
+      if (Number(shop.transport)) rows.push(`<div><p class="k">${T('transRow')}</p><div class="acc-row"><span>${T('nDays', b.days.size)} × ${yen(shop.transport)}</span><b>${yen(b.transport)}</b></div></div>`);
       html += `<section class="acc ${isOpen ? 'open' : ''}"><button class="acc-head" data-act="pay-toggle" data-id="${esc(shop.id)}" aria-expanded="${isOpen}">${avatar(shop, 'lg')}
-        <span class="acc-main"><small>${r.pd ? `Nhận ngày ${fmtDM(r.pd)}` : `Kỳ ${fmtDM(r.per.start)} – ${fmtDM(r.per.end)}`}</small><b>${esc(shop.name)}</b></span>
+        <span class="acc-main"><small>${r.pd ? T('paidOnDay', fmtDM(r.pd)) : T('periodX', fmtDM(r.per.start), fmtDM(r.per.end))}</small><b>${esc(shop.name)}</b></span>
         <span class="acc-amt">${r.noWage ? '—' : yen(b.total)}</span><span class="acc-chev">${I.down}</span></button>
-        ${isOpen ? `<div class="acc-body">${r.noWage ? `<p class="muted">Chưa nhập 時給. <button class="link-btn" data-act="shop-edit" data-id="${esc(shop.id)}">Nhập lương cho quán này</button></p>` : rows.join('')}</div>` : ''}</section>`;
+        ${isOpen ? `<div class="acc-body">${r.noWage ? `<p class="muted">${T('noWage')} <button class="link-btn" data-act="shop-edit" data-id="${esc(shop.id)}">${T('enterWageShop')}</button></p>` : rows.join('')}</div>` : ''}</section>`;
     }
-    return html + '<p class="list-f">Ngày lễ Nhật (祝日) được nhận tự động. Ca qua đêm tính theo ngày bắt đầu ca. Chưa trừ thuế thu nhập và bảo hiểm.</p></main>';
+    return html + `<p class="list-f">${T('payFoot')}</p></main>`;
   }
 
   { // overview: the work calendar comes first
     const lastWs = weekStartOf(m.last);
     let cal = '';
     for (let i = 0; i < 7; i++) cal += `<span class="cal-h">${DOW[(st.weekStart + i) % 7]}</span>`;
-    cal += '<span class="cal-h">Tuần</span>';
+    cal += `<span class="cal-h">${T('calWeek')}</span>`;
     for (let ws = weekStartOf(m.first); ws <= lastWs; ws = addDays(ws, 7)) {
       const w = weekStats(ws);
       for (let i = 0; i < 7; i++) {
@@ -1014,29 +1426,29 @@ function viewMonth() {
         cal += `<button class="cell ${d.slice(0, 7) !== ym ? 'out' : ''} ${d === t ? 'today' : ''} ${w.status === 'over' ? 'wk-over' : ''} ${hol ? 'hol' : ''} ${k >= 0.55 ? 'dk' : ''}" style="--k:${k.toFixed(2)}" data-act="day" data-date="${d}" aria-label="${fmtDM(d)}${hol ? ' ' + hol : ''}: ${fmtH(v)}">
           <span class="d">${Number(d.slice(8))}</span><span class="h">${v ? fmtH(v) : ''}</span></button>`;
       }
-      cal += `<button class="sum ${w.status}" data-act="goto-week" data-ws="${ws}" aria-label="Tuần ${fmtDM(ws)}: ${fmtH(w.total)}">${fmtH(w.total)}<small>/${fmtH(w.limit)}</small></button>`;
+      cal += `<button class="sum ${w.status}" data-act="goto-week" data-ws="${ws}" aria-label="${T('calWeekA', fmtDM(ws), fmtH(w.total))}">${fmtH(w.total)}<small>/${fmtH(w.limit)}</small></button>`;
     }
-    html += `<section class="card"><div class="card-h"><h2>Lịch làm</h2><small>chạm ngày để xem ca</small></div><div class="cal">${cal}</div>
-      <p class="list-f" style="padding:12px 2px 0">Ô càng đậm là ngày làm càng nhiều giờ. Gạch đỏ: tuần vượt giới hạn, số đỏ: ngày lễ. Chạm cột Tuần để mở tuần đó.</p></section>`;
+    html += `<section class="card"><div class="card-h"><h2>${T('calTitle')}</h2><small>${T('calHint')}</small></div><div class="cal">${cal}</div>
+      <p class="list-f" style="padding:12px 2px 0">${T('calLegend')}</p></section>`;
   }
 
   const overWeeks = m.weeks.filter((w) => w.status === 'over'), left = m.cap - m.total, scale = Math.max(m.total, m.cap) || 1;
-  const label = { ok: 'Trong dự trù', near: 'Gần chạm dự trù', over: 'Vượt dự trù' }[m.status];
-  html += `<section class="card sum-card"><div class="sum-top"><span>Tổng giờ trong tháng</span><span class="badge ${m.status}">${statusIcon(m.status)}${label}</span></div>
+  const label = T('m_' + m.status);
+  html += `<section class="card sum-card"><div class="sum-top"><span>${T('monthTotal')}</span><span class="badge ${m.status}">${statusIcon(m.status)}${label}</span></div>
     <div class="big"><b>${fmtH(m.total)}</b><span>/ ${fmtH(m.cap)}</span></div>
     <div class="meter ${m.status}"><i style="width:${(Math.min(m.total, m.cap) / scale) * 100}%"></i>${m.total > m.cap ? `<u style="width:${((m.total - m.cap) / scale) * 100}%"></u>` : ''}</div>
-    <div class="foot">Đã làm ${fmtH(m.done)} · đã xếp lịch ${fmtH(m.plan)}</div></section>`;
+    <div class="foot">${T('monthFoot', fmtH(m.done), fmtH(m.plan))}</div></section>`;
   if (overWeeks.length) {
-    html += alertBox(`${overWeeks.length} tuần vượt giới hạn`, `<ul>${overWeeks.map((w) => `<li>${fmtDM(w.ws)} – ${fmtDM(w.we)}: <b>${fmtH(w.total)}</b> / ${fmtH(w.limit)} (vượt ${fmtH(w.total - w.limit)})</li>`).join('')}</ul>`,
-      `<button class="cta sm red" data-act="goto-week" data-ws="${overWeeks[overWeeks.length - 1].ws}">Mở tuần vượt ${I.next}</button>`);
+    html += alertBox(T('overWeeks', overWeeks.length), `<ul>${overWeeks.map((w) => `<li>${fmtDM(w.ws)} – ${fmtDM(w.we)}: <b>${fmtH(w.total)}</b> / ${fmtH(w.limit)} ${T('overBy', fmtH(w.total - w.limit))}</li>`).join('')}</ul>`,
+      `<button class="cta sm red" data-act="goto-week" data-ws="${overWeeks[overWeeks.length - 1].ws}">${T('openOverWeek')} ${I.next}</button>`);
   }
   html += sampleBanner();
   const uniform = Math.abs(m.cap - (st.weekLimit * 60 * m.n) / 7) < 1;
   html += `<div class="tiles two">
-    ${tile(I.target, fmtH(m.cap), uniform ? `Tối đa dự trù · ${fmtH(st.weekLimit * 60)}/tuần × ${m.n} ngày ÷ 7` : `Tối đa dự trù · ${m.n} ngày, có kỳ nghỉ`)}
-    ${tile(I.hourglass, fmtH(Math.abs(left)), left >= 0 ? (m.daysLeft ? `Còn có thể xếp trong ${m.daysLeft} ngày` : 'Còn dư, tháng đã qua') : 'Vượt dự trù', left >= 0 ? 'good' : 'bad')}
-    ${tile(I.bolt, m.daysLeft && left > 0 ? fmtH(left / m.daysLeft) : '0h', 'Trung bình mỗi ngày còn lại')}
-    ${tile(I.list, allShifts().filter((s) => s.date.startsWith(ym)).length, 'Ca trong tháng')}</div>`;
+    ${tile(I.target, fmtH(m.cap), uniform ? T('capUniform', fmtH(st.weekLimit * 60), m.n) : T('capVac', m.n))}
+    ${tile(I.hourglass, fmtH(Math.abs(left)), left >= 0 ? (m.daysLeft ? T('leftDays', m.daysLeft) : T('leftPast')) : T('m_over'), left >= 0 ? 'good' : 'bad')}
+    ${tile(I.bolt, m.daysLeft && left > 0 ? fmtH(left / m.daysLeft) : '0h', T('avgLeft'))}
+    ${tile(I.list, allShifts().filter((s) => s.date.startsWith(ym)).length, T('tShiftsMonth'))}</div>`;
   return html + '</main>';
 }
 
@@ -1045,11 +1457,11 @@ function presetPay(p, shop) { // weekday estimate for a saved shift, shown as "t
 }
 function viewShops() {
   const list = shops(), all = allShifts(), ym = todayStr().slice(0, 7);
-  let html = `<main class="wrap stack"><header class="head"><div><h1>Quán làm</h1><p>${list.length ? `${list.length} quán · chạm một ca để ghi nhanh` : 'Lưu quán một lần, lần sau chỉ cần chọn'}</p></div>${circ('shop-new', I.plus, 'Thêm quán', 'dark')}</header>`;
+  let html = `<main class="wrap stack"><header class="head"><div><h1>${T('shopsTitle')}</h1><p>${list.length ? T('shopsSub', list.length) : T('shopsSub0')}</p></div>${circ('shop-new', I.plus, T('addShop'), 'dark')}</header>`;
   if (!list.length) {
-    html += `<section class="card"><div class="card-h"><h2>Chưa có quán nào</h2></div>
-      <p class="muted" style="margin-bottom:16px">Lưu tên quán, 時給 và giờ của các ca hay làm. Khi thêm ca bạn chỉ cần chọn quán và chạm vào ca, không phải gõ lại.</p>
-      <button class="cta dark" data-act="shop-new">${I.plus}Thêm quán đầu tiên</button></section>`;
+    html += `<section class="card"><div class="card-h"><h2>${T('noShops')}</h2></div>
+      <p class="muted" style="margin-bottom:16px">${T('noShopsBody')}</p>
+      <button class="cta dark" data-act="shop-new">${I.plus}${T('addFirstShop')}</button></section>`;
   }
   html += sampleBanner();
   for (const s of list) {
@@ -1058,21 +1470,21 @@ function viewShops() {
     const info = [];
     if (s.phone) info.push(`<p>${I.phone}<span>${esc(s.phone)}</span></p>`);
     if (s.note) info.push(`<p>${I.note}<span>${esc(s.note)}</span></p>`);
-    if (hasWage) info.push(`<p>${I.cal}<span>${[closeText(s), payText(s)].filter(Boolean).join(' · ').replace(/^c/, 'C')}</span></p>`);
+    if (hasWage) info.push(`<p>${I.cal}<span>${T('payCycle', Number(s.closeDay) || 0, Number(s.payDay) || 0, s.payMonth)}</span></p>`);
     html += `<section class="shop">
-      <div class="shop-head">${avatar(s, 'lg')}<span class="shop-name"><b>${esc(s.name)}</b>${s.address ? `<small>${I.pin}<span>${esc(s.address)}</span></small>` : `<small><span>${mine.length} ca đã ghi</span></small>`}</span>${hasWage ? `<span class="rate">${yen(s.wage)}/giờ</span>` : ''}</div>
-      <div class="shop-links"><button class="ulink" data-act="shop-edit" data-id="${esc(s.id)}">Sửa thông tin</button><span>Tháng này ${fmtH(monthMin)}${monthYen ? ` · ${yen(monthYen)}` : ''}</span></div>
+      <div class="shop-head">${avatar(s, 'lg')}<span class="shop-name"><b>${esc(s.name)}</b>${s.address ? `<small>${I.pin}<span>${esc(s.address)}</span></small>` : `<small><span>${T('nLogged', mine.length)}</span></small>`}</span>${hasWage ? `<span class="rate">${yen(s.wage)}${T('perH')}</span>` : ''}</div>
+      <div class="shop-links"><button class="ulink" data-act="shop-edit" data-id="${esc(s.id)}">${T('editInfo')}</button><span>${T('thisMonthX', fmtH(monthMin))}${monthYen ? ` · ${yen(monthYen)}` : ''}</span></div>
       ${hasWage ? `<div class="facts">
-        <div class="fact"><small>時給 T7, CN</small><b>${yen(wageOf(s, 'wkd'))}</b></div>
-        <div class="fact"><small>時給 ngày lễ</small><b>${yen(wageOf(s, 'hol'))}</b></div>
-        <div class="fact"><small>Phụ cấp đêm 22–5h</small><b>+${nightPctOf(s)}%</b></div>
-        <div class="fact"><small>Tiền tàu mỗi ngày</small><b>${Number(s.transport) ? yen(s.transport) : '—'}</b></div></div>`
-        : `<p class="list-f" style="padding:0">Chưa nhập 時給. <button class="link-btn" data-act="shop-edit" data-id="${esc(s.id)}">Nhập lương</button> để app tính tiền cho bạn.</p>`}
+        <div class="fact"><small>${T('wWkd')}</small><b>${yen(wageOf(s, 'wkd'))}</b></div>
+        <div class="fact"><small>${T('wHol')}</small><b>${yen(wageOf(s, 'hol'))}</b></div>
+        <div class="fact"><small>${T('f_night')}</small><b>+${nightPctOf(s)}%</b></div>
+        <div class="fact"><small>${T('f_trans')}</small><b>${Number(s.transport) ? yen(s.transport) : '—'}</b></div></div>`
+        : `<p class="list-f" style="padding:0">${T('noWageHint', `<button class="link-btn" data-act="shop-edit" data-id="${esc(s.id)}">${T('enterWage')}</button>`)}</p>`}
       ${info.length ? `<div class="info">${info.join('')}</div>` : ''}
-      <div class="sec" style="margin-top:0"><h2 style="font-size:18px">Ca thường làm</h2><button class="ulink" data-act="add" data-shop="${esc(s.id)}">Ca khác</button></div>
-      ${ps.length ? `<div class="presets">${ps.map((p) => { const pay = hasWage ? presetPay(p, s) : 0; return `<button class="pcard press" data-act="add" data-shop="${esc(s.id)}" data-preset="${esc(p.id)}" aria-label="Ghi ca ${esc(p.name || p.start)}">
-          <b>${esc(p.name || 'Ca làm')}</b><span class="pt">${esc(p.start)} – ${esc(p.end)}</span><small>${fmtH(shiftMin(p))}${pay ? ` · từ ${yen(pay)}` : ''}</small><span class="go">${I.plus}</span></button>`; }).join('')}</div>`
-        : `<p class="list-f" style="padding:0">Chưa lưu ca thường làm. <button class="link-btn" data-act="shop-edit" data-id="${esc(s.id)}">Thêm ngay</button></p>`}
+      <div class="sec" style="margin-top:0"><h2 style="font-size:18px">${T('usualShifts')}</h2><button class="ulink" data-act="add" data-shop="${esc(s.id)}">${T('otherShift')}</button></div>
+      ${ps.length ? `<div class="presets">${ps.map((p) => { const pay = hasWage ? presetPay(p, s) : 0; return `<button class="pcard press" data-act="add" data-shop="${esc(s.id)}" data-preset="${esc(p.id)}" aria-label="${T('logShiftA', esc(p.name || p.start))}">
+          <b>${esc(p.name || T('defShiftName'))}</b><span class="pt">${esc(p.start)} – ${esc(p.end)}</span><small>${fmtH(shiftMin(p))}${pay ? T('fromY', yen(pay)) : ''}</small><span class="go">${I.plus}</span></button>`; }).join('')}</div>`
+        : `<p class="list-f" style="padding:0">${T('noPresets', `<button class="link-btn" data-act="shop-edit" data-id="${esc(s.id)}">${T('addNow')}</button>`)}</p>`}
     </section>`;
   }
   return html + '</main>';
@@ -1081,47 +1493,56 @@ function viewShops() {
 function viewSettings() {
   const st = settings(), list = shops(), all = allShifts();
   const ico = (icon, cls = '') => `<span class="li-ico ${cls}">${icon}</span>`;
-  return `<main class="wrap stack"><header class="head"><div><h1>Cài đặt</h1><p>Giới hạn giờ làm, kỳ nghỉ và dữ liệu</p></div></header>
-  <p class="list-h">Giới hạn giờ làm · kỳ học</p>
+  return `<main class="wrap stack"><header class="head"><div><h1>${T('tab_settings')}</h1><p>${T('setSub')}</p></div></header>
   <section class="list">
-    <label class="li" for="set-week">${ico(I.clock)}<span class="li-main"><b>Tối đa mỗi tuần</b><small>Visa du học: 28 giờ</small></span>
-      <span class="li-end"><input id="set-week" class="in-pill" type="number" inputmode="decimal" min="1" max="80" step="0.5" value="${st.weekLimit}">giờ</span></label>
-    <div class="li">${ico(I.cal)}<span class="li-main"><b>Ngày đầu tuần</b></span>
-      <span class="li-end">${seg('set-ws', [['1', 'Thứ Hai'], ['0', 'CN']], String(st.weekStart))}</span></div>
+    <label class="li" for="set-lang">${ico(I.globe)}<span class="li-main"><b>${T('lang')}</b>${LI !== 1 ? '<small>Language</small>' : ''}</span>
+      <span class="li-end"><select id="set-lang" class="in-r" style="width:auto">${LANGS.map((l, i) => `<option value="${l}" ${i === LI ? 'selected' : ''}>${LANG_NAMES[i]}</option>`).join('')}</select>${I.chev}</span></label>
   </section>
-  <p class="list-f">Giờ còn lại tính trong từng tuần, từ ngày đầu tuần ở trên đến hết 7 ngày. Giờ tối đa của tháng: ${fmtH(st.weekLimit * 60)} × số ngày ÷ 7.</p>
 
-  <p class="list-h">Kỳ nghỉ dài · 長期休業</p>
+  <p class="list-h">${T('secTerm')}</p>
   <section class="list">
-    <label class="li" for="set-vweek">${ico(I.sun)}<span class="li-main"><b>Tối đa mỗi tuần</b><small>Trong kỳ nghỉ của trường</small></span>
-      <span class="li-end"><input id="set-vweek" class="in-pill" type="number" inputmode="decimal" min="1" max="80" step="0.5" value="${st.vacWeekLimit}">giờ</span></label>
-    ${st.vacations.map((v) => `<button class="li" data-act="vac-edit" data-id="${esc(v.id)}">${ico(I.cal)}<span class="li-main"><b>${esc(v.name || 'Kỳ nghỉ')}</b><small>${fmtDM(v.start)}/${v.start.slice(0, 4)} – ${fmtDM(v.end)}/${v.end.slice(0, 4)}</small></span><span class="li-end">${I.chev}</span></button>`).join('')}
-    <button class="li" data-act="vac-new">${ico(I.plus)}<span class="li-main"><b>Thêm kỳ nghỉ</b></span><span class="li-end">${I.chev}</span></button>
+    <label class="li" for="set-week">${ico(I.clock)}<span class="li-main"><b>${T('maxWeek')}</b><small>${T('visa28')}</small></span>
+      <span class="li-end"><input id="set-week" class="in-pill" type="number" inputmode="decimal" min="1" max="80" step="0.5" value="${st.weekLimit}">${T('hUnit')}</span></label>
+    <div class="li">${ico(I.cal)}<span class="li-main"><b>${T('weekStartL')}</b></span>
+      <span class="li-end">${seg('set-ws', [['1', T('mon')], ['0', T('sun')]], String(st.weekStart))}</span></div>
   </section>
-  <p class="list-f">Tuần nằm trọn trong kỳ nghỉ dùng giới hạn ${fmtH(st.vacWeekLimit * 60)}/tuần.</p>
+  <p class="list-f">${T('termFoot', fmtH(st.weekLimit * 60))}</p>
 
-  <p class="list-h">Dữ liệu</p>
+  <p class="list-h">${T('secVac')}</p>
   <section class="list">
-    <button class="li" data-act="export">${ico(I.upload)}<span class="li-main"><b>Xuất bản sao lưu</b><small>${all.length} ca · ${list.length} quán · dữ liệu chỉ nằm trên máy này</small></span><span class="li-end">${I.chev}</span></button>
-    <button class="li" data-act="import">${ico(I.download)}<span class="li-main"><b>Nhập từ bản sao lưu</b><small>Thay thế dữ liệu hiện tại</small></span><span class="li-end">${I.chev}</span></button>
-    ${hasSample() ? `<button class="li" data-act="sample-clear">${ico(I.sparkle)}<span class="li-main"><b>Xoá dữ liệu mẫu</b></span></button>`
-      : !all.length ? `<button class="li" data-act="sample-load">${ico(I.sparkle)}<span class="li-main"><b>Nạp dữ liệu mẫu để xem thử</b></span></button>` : ''}
-    <button class="li danger" data-act="clear-all">${ico(I.trash, 'red')}<span class="li-main"><b>Xoá toàn bộ dữ liệu</b></span></button>
+    <label class="li" for="set-vweek">${ico(I.sun)}<span class="li-main"><b>${T('maxWeek')}</b><small>${T('inVac')}</small></span>
+      <span class="li-end"><input id="set-vweek" class="in-pill" type="number" inputmode="decimal" min="1" max="80" step="0.5" value="${st.vacWeekLimit}">${T('hUnit')}</span></label>
+    ${st.vacations.map((v) => `<button class="li" data-act="vac-edit" data-id="${esc(v.id)}">${ico(I.cal)}<span class="li-main"><b>${esc(v.name || T('vacation'))}</b><small>${fmtDMY(v.start)} – ${fmtDMY(v.end)}</small></span><span class="li-end">${I.chev}</span></button>`).join('')}
+    <button class="li" data-act="vac-new">${ico(I.plus)}<span class="li-main"><b>${T('addVac')}</b></span><span class="li-end">${I.chev}</span></button>
   </section>
-  <p class="list-f">Quy định thường gặp với visa du học: tối đa 28 giờ mỗi tuần trong kỳ học, cộng tất cả các nơi làm; trong kỳ nghỉ dài do trường quy định có thể làm đến 40 giờ/tuần. Ứng dụng chỉ giúp bạn theo dõi. Hãy xác nhận quy định cụ thể với trường hoặc Cục Xuất nhập cảnh (出入国在留管理庁).</p>
+  <p class="list-f">${T('vacFoot', fmtH(st.vacWeekLimit * 60))}</p>
+
+  <p class="list-h">${T('secData')}</p>
+  <section class="list">
+    <button class="li" data-act="export">${ico(I.upload)}<span class="li-main"><b>${T('exportL')}</b><small>${T('exportSub', all.length, list.length)}</small></span><span class="li-end">${I.chev}</span></button>
+    <button class="li" data-act="import">${ico(I.download)}<span class="li-main"><b>${T('importL')}</b><small>${T('importSub')}</small></span><span class="li-end">${I.chev}</span></button>
+    ${hasSample() ? `<button class="li" data-act="sample-clear">${ico(I.sparkle)}<span class="li-main"><b>${T('sampleClear')}</b></span></button>`
+      : !all.length ? `<button class="li" data-act="sample-load">${ico(I.sparkle)}<span class="li-main"><b>${T('sampleLoadLong')}</b></span></button>` : ''}
+    <button class="li danger" data-act="clear-all">${ico(I.trash, 'red')}<span class="li-main"><b>${T('clearAll')}</b></span></button>
+  </section>
+  <p class="list-f">${T('rulesFoot')}</p>
   </main>`;
 }
 
 /* ---------- storage: everything stays on this device (localStorage) ---------- */
 function loadLocal() {
   try { const o = JSON.parse(localStorage.getItem(LS_DATA) || 'null'); if (o && o.docs) docs = o.docs; } catch (e) {}
-  try { const u = JSON.parse(localStorage.getItem(LS_UI) || '{}'); if (TABS.includes(u.tab)) ui.tab = u.tab; } catch (e) {}
+  let u = {};
+  try { u = JSON.parse(localStorage.getItem(LS_UI) || '{}') || {}; if (TABS.includes(u.tab)) ui.tab = u.tab; } catch (e) {}
+  // no saved choice: keep Vietnamese for data made before languages existed, otherwise follow the browser
+  ui.lang = LANGS.includes(u.lang) ? u.lang : Object.keys(docs).length ? 'vi' : detectLang();
+  setLang(ui.lang);
 }
 function saveLocal() {
   try { localStorage.setItem(LS_DATA, JSON.stringify({ docs })); }
-  catch (e) { toast('Không lưu được trên thiết bị này. Hãy xuất bản sao lưu ngay.', 'bad'); }
+  catch (e) { toast(T('saveFail'), 'bad'); }
 }
-function saveUI() { try { localStorage.setItem(LS_UI, JSON.stringify({ tab: ui.tab })); } catch (e) {} }
+function saveUI() { try { localStorage.setItem(LS_UI, JSON.stringify({ tab: ui.tab, lang: ui.lang })); } catch (e) {} }
 
 function commit(keys) {
   for (const k of new Set(keys)) if (k.startsWith('m-') && docs[k] && !(docs[k].shifts || []).length) delete docs[k];
@@ -1158,9 +1579,9 @@ function openSheet(html) {
   const sc = $('#sheet-body .sheet-scroll'); if (sc) sc.scrollTop = 0;
 }
 function closeSheet() { $('#sheet').hidden = true; document.body.classList.remove('locked'); form = shopForm = vacForm = null; }
-const sheetHead = (title, sub = '', lAct = 'close', lIcon = I.x, lLabel = 'Đóng') => `<div class="sheet-head"><button class="circle" data-act="${lAct}" aria-label="${lLabel}">${lIcon}</button><div class="title"><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</div><span></span></div>`;
+const sheetHead = (title, sub = '', lAct = 'close', lIcon = I.x, lLabel = T('close')) => `<div class="sheet-head"><button class="circle" data-act="${lAct}" aria-label="${lLabel}">${lIcon}</button><div class="title"><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</div><span></span></div>`;
 const sheetFoot = (act, label, attrs = '') => `<div class="sheet-foot"><button class="cta dark block sheet-cta" data-act="${act}" ${attrs}>${label}</button></div>`;
-const dayLabel = (d) => (isDate(d) ? `${DOW_LONG[dowOf(d)]}, ${fmtDM(d)}${holidayName(d) ? ' · ngày lễ' : ''}` : '');
+const dayLabel = (d) => (isDate(d) ? `${longDay(d)}${holidayName(d) ? T('holSuffix') : ''}` : '');
 const showErr = (id, msg) => { const e = $(id); e.textContent = msg; e.hidden = false; e.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
 
 function defaultDate() {
@@ -1189,65 +1610,65 @@ function applyShopDefaults(presetId) { // the shop's saved shift fills the times
   if (src) Object.assign(form, { start: src.start, end: src.end, breakMin: Number(src.breakMin) || 0 });
 }
 function shopChips() {
-  if (!shops().length) return '<span class="sect-f" style="padding:0">Chưa có quán nào. Lưu quán một lần, lần sau chỉ cần chọn.</span><button class="chip dashed" data-act="sh-newshop">+ Thêm quán</button>';
+  if (!shops().length) return `<span class="sect-f" style="padding:0">${T('noShopsChip')}</span><button class="chip dashed" data-act="sh-newshop">${T('plusAddShop')}</button>`;
   return shops().map((s) => `<button class="chip ${form.shopId === s.id ? 'on' : ''}" data-act="sh-shop" data-id="${esc(s.id)}"><i class="dot" style="background:${form.shopId === s.id ? 'currentColor' : s.color}"></i><span>${esc(s.name)}</span></button>`).join('')
-    + '<button class="chip dashed" data-act="sh-newshop">+ Quán mới</button>';
+    + `<button class="chip dashed" data-act="sh-newshop">${T('plusNewShop')}</button>`;
 }
 function presetChips() {
   const shop = shopById(form.shopId);
   if (!shop) return '';
   const ps = presetsOf(shop.id);
-  return `<div class="sect"><p class="sect-h">Ca thường làm</p>${ps.length
+  return `<div class="sect"><p class="sect-h">${T('usualShifts')}</p>${ps.length
     ? `<div class="chips">${ps.map((p) => `<button class="chip ${samePreset(p, form) ? 'on' : ''}" data-act="sh-preset" data-id="${esc(p.id)}"><span>${presetLabel(p)}</span></button>`).join('')}</div>`
-    : '<p class="sect-f">Quán này chưa lưu ca thường làm. <button class="link-btn" data-act="sh-editshop">Lưu ca thường làm</button> để lần sau chỉ cần chạm chọn.</p>'}</div>`;
+    : `<p class="sect-f">${T('noPresetsHere', `<button class="link-btn" data-act="sh-editshop">${T('savePresets')}</button>`)}</p>`}</div>`;
 }
 function breakSeg() {
   const opts = [0, 15, 30, 45, 60, 90];
   if (!opts.includes(form.breakMin)) opts.push(form.breakMin);
-  return seg('sh-break', opts.sort((a, b) => a - b).map((v) => [String(v), v ? `${v}′` : 'Không']), String(form.breakMin));
+  return seg('sh-break', opts.sort((a, b) => a - b).map((v) => [String(v), v ? `${v}′` : T('none')]), String(form.breakMin));
 }
 function shiftSheetHTML() {
-  const t = todayStr();
-  return sheetHead(form.id ? 'Sửa ca' : 'Thêm ca', `<span id="sh-sub">${dayLabel(form.date)}</span>`) + `<div class="sheet-scroll">
-    <div class="sect"><p class="sect-h">Quán</p><div class="chips" id="sh-shops">${shopChips()}</div></div>
+  const td = todayStr();
+  return sheetHead(T(form.id ? 'editShift' : 'addShift'), `<span id="sh-sub">${dayLabel(form.date)}</span>`) + `<div class="sheet-scroll">
+    <div class="sect"><p class="sect-h">${T('shopL')}</p><div class="chips" id="sh-shops">${shopChips()}</div></div>
     <div id="sh-presets">${presetChips()}</div>
-    <div class="sect"><p class="sect-h">Thời gian</p><div class="group">
-      <label class="g-row"><span>Ngày</span><input id="sh-date" class="in-pill" type="date" value="${form.date}"></label>
-      <div class="g-row"><div class="chips"><button class="chip" data-act="sh-quick" data-v="${t}">Hôm nay</button><button class="chip" data-act="sh-quick" data-v="${addDays(t, 1)}">Ngày mai</button><button class="chip" data-act="sh-quick" data-v="+7">+7 ngày</button></div></div>
-      <label class="g-row"><span>Giờ vào <span class="ja">出勤</span></span><input id="sh-start" class="in-pill" type="time" step="300" value="${form.start}"></label>
-      <label class="g-row"><span>Giờ ra <span class="ja">退勤</span></span><input id="sh-end" class="in-pill" type="time" step="300" value="${form.end}"></label>
-      <div class="g-row col"><span>Nghỉ giải lao <span class="ja">休憩</span></span><div id="sh-break">${breakSeg()}</div></div>
-      <label class="g-row"><span>Ghi chú</span><input id="sh-note" class="in-r" type="text" maxlength="200" placeholder="Không bắt buộc" value="${esc(form.note)}"></label>
+    <div class="sect"><p class="sect-h">${T('timeL')}</p><div class="group">
+      <label class="g-row"><span>${T('dateL')}</span><input id="sh-date" class="in-pill" type="date" value="${form.date}"></label>
+      <div class="g-row"><div class="chips"><button class="chip" data-act="sh-quick" data-v="${td}">${T('s_today')}</button><button class="chip" data-act="sh-quick" data-v="${addDays(td, 1)}">${T('tomorrow')}</button><button class="chip" data-act="sh-quick" data-v="+7">${T('plus7')}</button></div></div>
+      <label class="g-row"><span>${T('startL')} <span class="ja">出勤</span></span><input id="sh-start" class="in-pill" type="time" step="300" value="${form.start}"></label>
+      <label class="g-row"><span>${T('endL')} <span class="ja">退勤</span></span><input id="sh-end" class="in-pill" type="time" step="300" value="${form.end}"></label>
+      <div class="g-row col"><span>${T('breakL')} <span class="ja">休憩</span></span><div id="sh-break">${breakSeg()}</div></div>
+      <label class="g-row"><span>${T('noteL')}</span><input id="sh-note" class="in-r" type="text" maxlength="200" placeholder="${T('optional')}" value="${esc(form.note)}"></label>
     </div></div>
     <div id="sh-actual">${actualSect()}</div>
     <div id="sh-preview" class="preview" aria-live="polite"></div>
     <p id="sh-err" class="err" hidden></p>
-    ${form.id ? `<div class="group"><button class="g-row center" data-act="sh-dup">${I.repeat}Chép sang +7 ngày</button><button class="g-row center danger" data-act="sh-del">${I.trash}Xoá ca</button></div>` : ''}
-  </div>${sheetFoot('sh-save', form.id ? 'Lưu thay đổi' : 'Lưu ca')}`;
+    ${form.id ? `<div class="group"><button class="g-row center" data-act="sh-dup">${I.repeat}${T('dup7')}</button><button class="g-row center danger" data-act="sh-del">${I.trash}${T('delShift')}</button></div>` : ''}
+  </div>${sheetFoot('sh-save', T(form.id ? 'saveChanges' : 'saveShift'))}`;
 }
 function actualSect() { // real clock times: live status while clocked in, editable times afterwards
-  const head = '<p class="sect-h">Giờ thực làm <span class="ja">実績</span></p>';
+  const head = `<p class="sect-h">${T('actualH')} <span class="ja">実績</span></p>`;
   if (form.punch) {
     const tl = punchTally(form.punch);
     return `<div class="sect">${head}<div class="group">
-      <div class="g-row"><span>Đã vào ca lúc</span><b class="t" style="font-weight:600">${hmOf(form.punch.in)}</b></div>
-      <div class="g-row"><span>Đã làm${tl.brk ? ` · nghỉ ${tl.brk}′` : ''}</span><b class="t" style="font-weight:600">${fmtH(tl.net)}</b></div>
-      <button class="g-row center" data-act="punch" data-k="out" data-id="${esc(form.id)}">${I.clockOut}Ra ca ngay</button>
-      <button class="g-row center danger" data-act="punch" data-k="cancel" data-id="${esc(form.id)}">${I.x}Huỷ chấm công</button></div>
-      <p class="sect-f">Đang trong ca. Bấm Ra ca ở đây hoặc ở Trang chủ khi xong việc.</p></div>`;
+      <div class="g-row"><span>${T('clockedInAt')}</span><b class="t" style="font-weight:600">${hmOf(form.punch.in)}</b></div>
+      <div class="g-row"><span>${T('workedL')}${tl.brk ? T('brkX', tl.brk) : ''}</span><b class="t" style="font-weight:600">${fmtH(tl.net)}</b></div>
+      <button class="g-row center" data-act="punch" data-k="out" data-id="${esc(form.id)}">${I.clockOut}${T('clockOutNow')}</button>
+      <button class="g-row center danger" data-act="punch" data-k="cancel" data-id="${esc(form.id)}">${I.x}${T('cancelPunch')}</button></div>
+      <p class="sect-f">${T('liveHelp')}</p></div>`;
   }
   if (!form.actual) {
     if (!isDate(form.date) || form.date > todayStr()) return '';
-    return `<div class="sect">${head}<button class="add-row" data-act="sh-actual-add">${I.plus}Nhập giờ thực tế</button>
-      <p class="sect-f">Khi đến ca, bấm Vào ca / Nghỉ / Ra ca ở Trang chủ để app tự ghi. Quên bấm thì nhập tay ở đây.</p></div>`;
+    return `<div class="sect">${head}<button class="add-row" data-act="sh-actual-add">${I.plus}${T('enterActual')}</button>
+      <p class="sect-f">${T('actualHelp')}</p></div>`;
   }
   const a = form.actual;
   return `<div class="sect">${head}<div class="group">
-    <label class="g-row"><span>Vào thực tế</span><input id="sh-astart" class="in-pill" type="time" value="${esc(a.start)}"></label>
-    <label class="g-row"><span>Ra thực tế</span><input id="sh-aend" class="in-pill" type="time" value="${esc(a.end)}"></label>
-    <label class="g-row"><span>Nghỉ thực tế</span><span class="in-unit"><input id="sh-abreak" class="in-r" type="number" inputmode="numeric" min="0" max="480" step="1" value="${Number(a.breakMin) || 0}"><em>phút</em></span></label>
-    <button class="g-row center danger" data-act="sh-actual-rm">${I.trash}Xoá giờ thực tế</button></div>
-    <p class="sect-f">${a.auto ? 'Hôm đó quên bấm Ra ca nên giờ ra lấy theo lịch. Sửa lại nếu bạn về sớm hoặc muộn hơn. ' : ''}Tổng giờ tuần và lương tính theo giờ thực tế này thay cho giờ đã xếp.</p></div>`;
+    <label class="g-row"><span>${T('aStart')}</span><input id="sh-astart" class="in-pill" type="time" value="${esc(a.start)}"></label>
+    <label class="g-row"><span>${T('aEnd')}</span><input id="sh-aend" class="in-pill" type="time" value="${esc(a.end)}"></label>
+    <label class="g-row"><span>${T('aBreak')}</span><span class="in-unit"><input id="sh-abreak" class="in-r" type="number" inputmode="numeric" min="0" max="480" step="1" value="${Number(a.breakMin) || 0}"><em>${T('minU')}</em></span></label>
+    <button class="g-row center danger" data-act="sh-actual-rm">${I.trash}${T('rmActual')}</button></div>
+    <p class="sect-f">${a.auto ? T('autoNote') : ''}${T('actualFoot')}</p></div>`;
 }
 function syncShiftForm() { // after a shop or saved-shift tap: refresh chips, time fields and the preview
   $('#sh-shops').innerHTML = shopChips();
@@ -1258,42 +1679,42 @@ function syncShiftForm() { // after a shop or saved-shift tap: refresh chips, ti
   updatePreview();
 }
 function shiftErr() {
-  if (!shopById(form.shopId)) return 'Chọn quán, hoặc chạm “+ Quán mới” để lưu quán.';
-  if (!isDate(form.date)) return 'Chọn ngày làm.';
-  if (!isTime(form.start) || !isTime(form.end)) return 'Nhập giờ vào và giờ ra.';
-  if (form.start === form.end) return 'Giờ vào và giờ ra đang trùng nhau.';
-  if (planMin(form) <= 0) return 'Thời gian nghỉ dài hơn cả ca làm.';
+  if (!shopById(form.shopId)) return T('e_shop');
+  if (!isDate(form.date)) return T('e_date');
+  if (!isTime(form.start) || !isTime(form.end)) return T('e_time');
+  if (form.start === form.end) return T('e_same');
+  if (planMin(form) <= 0) return T('e_brk');
   if (form.actual) {
     const a = form.actual;
-    if (!isTime(a.start) || !isTime(a.end)) return 'Nhập đủ giờ vào và giờ ra thực tế, hoặc xoá giờ thực tế.';
-    if (a.start === a.end) return 'Giờ vào và giờ ra thực tế đang trùng nhau.';
-    if (shiftMin(form) <= 0) return 'Thời gian nghỉ thực tế dài hơn cả ca làm.';
+    if (!isTime(a.start) || !isTime(a.end)) return T('e_aTime');
+    if (a.start === a.end) return T('e_aSame');
+    if (shiftMin(form) <= 0) return T('e_aBrk');
   }
   return '';
 }
 function updatePreview() {
   const box = $('#sh-preview'); if (!box || !form) return;
   const sub = $('#sh-sub'); if (sub) sub.textContent = dayLabel(form.date);
-  if (!isDate(form.date) || !isTime(form.start) || !isTime(form.end) || form.start === form.end) { box.innerHTML = '<span class="muted">Nhập ngày và giờ để xem ca này ảnh hưởng thế nào đến tuần.</span>'; return; }
+  if (!isDate(form.date) || !isTime(form.start) || !isTime(form.end) || form.start === form.end) { box.innerHTML = `<span class="muted">${T('pvEmpty')}</span>`; return; }
   const net = planMin(form), gross = grossMin(plan(form));
   const others = allShifts().filter((s) => s.id !== form.id);
   const day = buildIndex([...others, { ...form, id: '_new' }]).day;
   const ws = weekStartOf(form.date), lim = weekLimitMin(ws);
   const before = sumRange(buildIndex(others).day, ws, 7), after = sumRange(day, ws, 7);
-  const lines = [`<div class="pv-big"><b>${fmtH(net)}</b><span class="muted">làm việc${form.breakMin ? ` · nghỉ ${form.breakMin} phút` : ''}${isOvernight(form) ? ' · qua đêm, ra ca ngày hôm sau' : ''}</span></div>`];
-  if (hasActual(form) && form.actual.start !== form.actual.end) lines.push(`<div class="pv-line ok">${I.clock}<span>Thực làm <b>${fmtH(shiftMin(form))}</b>${diffText(form) ? ` · ${shiftMin(form) > planMin(form) ? 'hơn' : 'ít hơn'} lịch ${fmtShort(shiftMin(form) - planMin(form))}` : ' · đúng như lịch'}</span></div>`);
+  const lines = [`<div class="pv-big"><b>${fmtH(net)}</b><span class="muted">${T('pvWork')}${form.breakMin ? T('pvBrk', form.breakMin) : ''}${isOvernight(form) ? T('pvOvernight') : ''}</span></div>`];
+  if (hasActual(form) && form.actual.start !== form.actual.end) lines.push(`<div class="pv-line ok">${I.clock}<span>${T('pvActual', fmtH(shiftMin(form)))}${diffText(form) ? ` · ${T('vsPlan', shiftMin(form) > planMin(form), fmtShort(shiftMin(form) - planMin(form)))}` : T('pvExact')}</span></div>`);
   const stt = statusOf(after, lim);
-  lines.push(`<div class="pv-line ${stt}">${stt === 'ok' ? I.ok : I.warn}<span>Tuần ${fmtDM(ws)} – ${fmtDM(addDays(ws, 6))}: ${fmtH(before)} → <b>${fmtH(after)}</b> / ${fmtH(lim)}${stt === 'over' ? ` · vượt ${fmtH(after - lim)}` : stt === 'near' ? ` · còn ${fmtH(lim - after)}` : ''}</span></div>`);
+  lines.push(`<div class="pv-line ${stt}">${stt === 'ok' ? I.ok : I.warn}<span>${T('pvWeek', fmtDM(ws), fmtDM(addDays(ws, 6)))} ${fmtH(before)} → <b>${fmtH(after)}</b> / ${fmtH(lim)}${stt === 'over' ? T('overX', fmtH(after - lim)) : stt === 'near' ? T('leftX', fmtH(lim - after)) : ''}</span></div>`);
   const shop = shopById(form.shopId), hol = holidayName(form.date);
   if (shop && (Number(shop.wage) || Number(shop.wageWeekend) || Number(shop.wageHoliday))) {
     const p = shiftPay(form, shop);
     const tr = others.some((s) => s.shopId === shop.id && s.date === form.date) ? 0 : Number(shop.transport) || 0;
-    const parts = [`${hol ? `ngày lễ (${hol})` : p.kind === 'wkd' ? 'T7, CN' : 'ngày thường'} ${yen(p.wage)}/giờ`];
-    if (p.night) parts.push(`đêm ${fmtH(p.night)} +${nightPctOf(shop)}%`);
-    if (tr) parts.push(`tàu ${yen(tr)}`);
-    lines.push(`<div class="pv-line">${I.yen}<span><span class="yen">Ước tính ${yen(p.total + tr)}</span> <span class="muted">· ${parts.join(' · ')}</span></span></div>`);
-  } else if (hol) lines.push(`<div class="pv-line">${I.cal}<span class="muted">Ngày lễ: ${hol}</span></div>`);
-  if (gross > 360 && form.breakMin < 45) lines.push(`<div class="pv-line">${I.info}<span class="muted">Ca trên 6 tiếng thường có ít nhất 45 phút nghỉ (労働基準法).</span></div>`);
+    const parts = [`${hol ? T('pvHol', hol) : T(p.kind === 'wkd' ? 'pvWkd' : 'pvWd')} ${yen(p.wage)}${T('perH')}`];
+    if (p.night) parts.push(T('pvNight', fmtH(p.night), nightPctOf(shop)));
+    if (tr) parts.push(T('pvTrain', yen(tr)));
+    lines.push(`<div class="pv-line">${I.yen}<span><span class="yen">${T('pvEst', yen(p.total + tr))}</span> <span class="muted">· ${parts.join(' · ')}</span></span></div>`);
+  } else if (hol) lines.push(`<div class="pv-line">${I.cal}<span class="muted">${T('pvHolOnly', hol)}</span></div>`);
+  if (gross > 360 && form.breakMin < 45) lines.push(`<div class="pv-line">${I.info}<span class="muted">${T('pv6h')}</span></div>`);
   box.innerHTML = lines.join('');
 }
 function saveShift() {
@@ -1313,8 +1734,8 @@ function saveShift() {
   if (ui.tab === 'month') ui.ym = shift.date.slice(0, 7); else { ui.tab = 'week'; ui.ws = weekStartOf(shift.date); saveUI(); }
   commit(keys);
   const w = weekStats(weekStartOf(shift.date));
-  if (w.status === 'over') toast(`Đã lưu. Tuần ${fmtDM(w.ws)} vượt ${fmtH(w.total - w.limit)}!`, 'bad');
-  else toast(`Đã lưu ${fmtH(shiftMin(shift))} · tuần ${fmtH(w.total)}/${fmtH(w.limit)}`);
+  if (w.status === 'over') toast(T('savedOver', fmtDM(w.ws), fmtH(w.total - w.limit)), 'bad');
+  else toast(T('savedOk', fmtH(shiftMin(shift)), fmtH(w.total), fmtH(w.limit)));
 }
 function punchShift(id, kind) {
   const cur = allShifts().find((x) => x.id === id);
@@ -1325,29 +1746,29 @@ function punchShift(id, kind) {
     if (st) return;
     const other = allShifts().find((x) => x.id !== id && punchState(x));
     if (other && Date.now() > planEndTs(other)) { sweepForgotten(other.id); return punchShift(id, kind); }
-    if (other) { toast(`Bạn đang trong ca ở ${shopName(other.shopId)}. Ra ca đó trước.`, 'bad'); return; }
+    if (other) { toast(T('inOther', shopName(other.shopId)), 'bad'); return; }
     s.punch = { in: now, breaks: [] }; delete s.actual;
-    msg = `Đã vào ca lúc ${hmOf(now)}`;
+    msg = T('inAtT', hmOf(now));
   } else if (!st) return;
   else if (kind === 'brk') {
     if (st === 'break') return;
     s.punch.breaks.push({ s: now });
-    msg = `Bắt đầu nghỉ lúc ${hmOf(now)}`;
+    msg = T('brkAt', hmOf(now));
   } else if (kind === 'brk-end') {
     if (st !== 'break') return;
     const b = s.punch.breaks[s.punch.breaks.length - 1]; b.e = now;
-    msg = `Hết nghỉ · nghỉ ${Math.max(0, minOf(now) - minOf(b.s))} phút`;
+    msg = T('brkDone', Math.max(0, minOf(now) - minOf(b.s)));
   } else if (kind === 'out') {
     const b = s.punch.breaks[s.punch.breaks.length - 1];
     if (b && !Number.isFinite(b.e)) b.e = now;
     const tl = punchTally(s.punch, now);
-    if (tl.gross < 1) { toast('Vừa vào ca chưa đến 1 phút. Muốn bỏ thì chọn Huỷ chấm công trong ca.', 'bad'); return; }
+    if (tl.gross < 1) { toast(T('tooSoon'), 'bad'); return; }
     s.actual = { start: hmOf(s.punch.in), end: hmOf(now), breakMin: tl.brk };
     delete s.punch;
     const d = shiftMin(s) - planMin(s);
-    msg = `Đã ra ca · thực làm ${fmtH(shiftMin(s))}${d ? ` (${d > 0 ? 'hơn' : 'ít hơn'} lịch ${fmtShort(d)})` : ''}`;
+    msg = T('outDone', fmtH(shiftMin(s))) + (d ? ` (${T('vsPlan', d > 0, fmtShort(d))})` : '');
   } else if (kind === 'cancel') {
-    delete s.punch; msg = 'Đã huỷ chấm công ca này';
+    delete s.punch; msg = T('cancelled');
   } else return;
   const keys = [];
   putShift(s, keys);
@@ -1357,9 +1778,9 @@ function punchShift(id, kind) {
   commit(keys);
   if (kind === 'out') {
     const w = weekStats(weekStartOf(s.date));
-    if (w.status === 'over') { msg += ` · tuần vượt ${fmtH(w.total - w.limit)}!`; bad = true; }
+    if (w.status === 'over') { msg += T('weekOverX', fmtH(w.total - w.limit)); bad = true; }
   }
-  toast(msg, bad ? 'bad' : '', { label: 'Hoàn tác', fn: () => { const k = []; putShift(before, k); commit(k); toast('Đã hoàn tác'); } });
+  toast(msg, bad ? 'bad' : '', { label: T('undo'), fn: () => { const k = []; putShift(before, k); commit(k); toast(T('undone')); } });
 }
 function deleteShift(id) {
   const s = allShifts().find((x) => x.id === id);
@@ -1367,7 +1788,7 @@ function deleteShift(id) {
   const keys = [];
   dropShifts((x) => x.id === id, keys);
   closeSheet(); commit(keys);
-  toast('Đã xoá ca', '', { label: 'Hoàn tác', fn: () => { const k = []; putShift(s, k); commit(k); toast('Đã khôi phục ca'); } });
+  toast(T('shiftDeleted'), '', { label: T('undo'), fn: () => { const k = []; putShift(s, k); commit(k); toast(T('shiftRestored')); } });
 }
 
 /* shop sheet: name, wages, pay cycle, saved shifts, contact details. Opened from the shift form it returns there with the shop selected. */
@@ -1384,57 +1805,57 @@ function openShop(id, returnForm = null) {
 }
 function presetEditors() {
   return shopForm.presets.map((p, i) => `<div class="group preset-ed" data-pi="${i}">
-    <div class="g-row"><input class="in-l" type="text" maxlength="30" data-pf="name" value="${esc(p.name)}" placeholder="Tên ca, ví dụ: Ca sáng" aria-label="Tên ca"><button class="mini-x" data-act="pr-rm" data-pi="${i}" aria-label="Xoá ca này">${I.x}</button></div>
-    <label class="g-row"><span>Giờ vào</span><input class="in-pill" type="time" data-pf="start" value="${esc(p.start)}"></label>
-    <label class="g-row"><span>Giờ ra</span><input class="in-pill" type="time" data-pf="end" value="${esc(p.end)}"></label>
-    <label class="g-row"><span>Nghỉ</span><span class="in-unit"><input class="in-r" type="number" inputmode="numeric" min="0" max="480" step="5" data-pf="breakMin" value="${Number(p.breakMin) || 0}"><em>phút</em></span></label>
+    <div class="g-row"><input class="in-l" type="text" maxlength="30" data-pf="name" value="${esc(p.name)}" placeholder="${T('presetPh')}" aria-label="${T('presetName')}"><button class="mini-x" data-act="pr-rm" data-pi="${i}" aria-label="${T('rmThisShift')}">${I.x}</button></div>
+    <label class="g-row"><span>${T('startL')}</span><input class="in-pill" type="time" data-pf="start" value="${esc(p.start)}"></label>
+    <label class="g-row"><span>${T('endL')}</span><input class="in-pill" type="time" data-pf="end" value="${esc(p.end)}"></label>
+    <label class="g-row"><span>${T('breakBtn')}</span><span class="in-unit"><input class="in-r" type="number" inputmode="numeric" min="0" max="480" step="5" data-pf="breakMin" value="${Number(p.breakMin) || 0}"><em>${T('minU')}</em></span></label>
   </div>`).join('');
 }
-const moneyRow = (id, label, v, ph) => `<label class="g-row"><span>${label}</span><span class="in-unit"><input id="${id}" class="in-r" type="number" inputmode="numeric" min="0" step="10" value="${esc(v)}" placeholder="${ph}"><em>yên</em></span></label>`;
+const moneyRow = (id, label, v, ph) => `<label class="g-row"><span>${label}</span><span class="in-unit"><input id="${id}" class="in-r" type="number" inputmode="numeric" min="0" step="10" value="${esc(v)}" placeholder="${ph}"><em>${T('yenU')}</em></span></label>`;
 function renderShopSheet() {
   const f = shopForm;
-  const head = f.returnForm ? sheetHead(f.id ? 'Thông tin quán' : 'Quán mới', 'Lưu xong sẽ quay lại ca đang thêm', 'shop-back', I.prev, 'Quay lại')
-    : sheetHead(f.id ? 'Thông tin quán' : 'Quán mới', f.id ? `${allShifts().filter((s) => s.shopId === f.id).length} ca đã ghi` : 'Lưu một lần, lần sau chỉ cần chọn');
+  const head = f.returnForm ? sheetHead(T(f.id ? 'shopInfo' : 'newShop'), T('returnHint'), 'shop-back', I.prev, T('back'))
+    : sheetHead(T(f.id ? 'shopInfo' : 'newShop'), f.id ? T('nLogged', allShifts().filter((s) => s.shopId === f.id).length) : T('shopsSub0'));
   openSheet(head + `<div class="sheet-scroll">
     <span class="avatar xl" id="shop-avatar" style="--c:${f.color}">${esc(initial(f.name))}</span>
-    <div class="group"><label class="g-row"><span>Tên quán</span><input id="shop-name" class="in-r" type="text" maxlength="60" value="${esc(f.name)}" placeholder="Ví dụ: Sukiya Baba" autocomplete="off"></label></div>
-    <div class="sect"><p class="sect-h">Lương và phụ cấp</p><div class="group">
-      ${moneyRow('shop-wage', '時給 ngày thường', f.wage, '1200')}
-      ${moneyRow('shop-wage-wkd', '時給 T7, CN', f.wageWeekend, 'như ngày thường')}
-      ${moneyRow('shop-wage-hol', '時給 ngày lễ', f.wageHoliday, 'như T7, CN')}
-      <label class="g-row"><span>Phụ cấp đêm</span><span class="in-unit"><input id="shop-night" class="in-r" type="number" inputmode="numeric" min="0" max="100" step="5" value="${esc(f.nightPct)}" placeholder="25"><em>%</em></span></label>
-      ${moneyRow('shop-transport', 'Tiền tàu mỗi ngày', f.transport, '0')}
-    </div><p class="sect-f">Ngày lễ Nhật (祝日) được nhận tự động. Phụ cấp đêm (深夜手当) cộng thêm cho phần làm từ 22:00 đến 5:00. Tiền tàu tính khứ hồi, mỗi ngày đi làm một lần.</p></div>
-    <div class="sect"><p class="sect-h">Kỳ lương</p><div class="group">
-      <label class="g-row"><span>Ngày chốt <span class="ja">締め日</span></span><select id="shop-close" class="in-r">${[0, 5, 10, 15, 20, 25].map((d) => `<option value="${d}" ${String(d) === f.closeDay ? 'selected' : ''}>${d ? `Ngày ${d}` : 'Cuối tháng'}</option>`).join('')}</select></label>
-      <label class="g-row"><span>Ngày nhận <span class="ja">給料日</span></span><input id="shop-payday" class="in-r" type="number" inputmode="numeric" min="1" max="31" value="${esc(f.payDay)}" placeholder="Ví dụ 25"></label>
-      <label class="g-row"><span>Tháng nhận</span><select id="shop-paymonth" class="in-r"><option value="1" ${f.payMonth === '1' ? 'selected' : ''}>Tháng sau</option><option value="0" ${f.payMonth === '0' ? 'selected' : ''}>Cùng tháng chốt</option></select></label>
+    <div class="group"><label class="g-row"><span>${T('shopNameL')}</span><input id="shop-name" class="in-r" type="text" maxlength="60" value="${esc(f.name)}" placeholder="${T('shopNamePh')}" autocomplete="off"></label></div>
+    <div class="sect"><p class="sect-h">${T('wageSec')}</p><div class="group">
+      ${moneyRow('shop-wage', T('wWd'), f.wage, '1200')}
+      ${moneyRow('shop-wage-wkd', T('wWkd'), f.wageWeekend, T('phWkd'))}
+      ${moneyRow('shop-wage-hol', T('wHol'), f.wageHoliday, T('phHol'))}
+      <label class="g-row"><span>${T('nightL')}</span><span class="in-unit"><input id="shop-night" class="in-r" type="number" inputmode="numeric" min="0" max="100" step="5" value="${esc(f.nightPct)}" placeholder="25"><em>%</em></span></label>
+      ${moneyRow('shop-transport', T('f_trans'), f.transport, '0')}
+    </div><p class="sect-f">${T('wageHelp')}</p></div>
+    <div class="sect"><p class="sect-h">${T('payPeriod')}</p><div class="group">
+      <label class="g-row"><span>${T('closeL')} <span class="ja">締め日</span></span><select id="shop-close" class="in-r">${[0, 5, 10, 15, 20, 25].map((d) => `<option value="${d}" ${String(d) === f.closeDay ? 'selected' : ''}>${d ? T('dayN', d) : T('monthEnd')}</option>`).join('')}</select></label>
+      <label class="g-row"><span>${T('payDayL')} <span class="ja">給料日</span></span><input id="shop-payday" class="in-r" type="number" inputmode="numeric" min="1" max="31" value="${esc(f.payDay)}" placeholder="${T('payDayPh')}"></label>
+      <label class="g-row"><span>${T('payMonthL')}</span><select id="shop-paymonth" class="in-r"><option value="1" ${f.payMonth === '1' ? 'selected' : ''}>${T('nextMonthOpt')}</option><option value="0" ${f.payMonth === '0' ? 'selected' : ''}>${T('sameMonth')}</option></select></label>
     </div></div>
-    <div class="sect"><p class="sect-h">Ca thường làm</p><div class="stack-s" id="shop-presets">${presetEditors()}</div>
-      <button class="add-row" data-act="pr-add">${I.plus}Thêm ca thường làm</button>
-      <p class="sect-f">Khi thêm ca chỉ cần chạm vào ca, không phải nhập lại giờ.</p></div>
-    <div class="sect"><p class="sect-h">Liên hệ</p><div class="group">
-      <label class="g-row"><span>Địa chỉ</span><input id="shop-address" class="in-r" type="text" maxlength="120" value="${esc(f.address)}" placeholder="新宿区大久保 1-2-3" autocomplete="off"></label>
-      <label class="g-row"><span>Điện thoại</span><input id="shop-phone" class="in-r" type="tel" inputmode="tel" maxlength="30" value="${esc(f.phone)}" placeholder="03-1234-5678" autocomplete="off"></label>
-      <label class="g-row"><span>Ghi chú</span><input id="shop-note" class="in-r" type="text" maxlength="200" value="${esc(f.note)}" placeholder="Quản lý, hạn nộp シフト…"></label>
+    <div class="sect"><p class="sect-h">${T('usualShifts')}</p><div class="stack-s" id="shop-presets">${presetEditors()}</div>
+      <button class="add-row" data-act="pr-add">${I.plus}${T('addPreset')}</button>
+      <p class="sect-f">${T('presetHelp')}</p></div>
+    <div class="sect"><p class="sect-h">${T('contact')}</p><div class="group">
+      <label class="g-row"><span>${T('address')}</span><input id="shop-address" class="in-r" type="text" maxlength="120" value="${esc(f.address)}" placeholder="新宿区大久保 1-2-3" autocomplete="off"></label>
+      <label class="g-row"><span>${T('phone')}</span><input id="shop-phone" class="in-r" type="tel" inputmode="tel" maxlength="30" value="${esc(f.phone)}" placeholder="03-1234-5678" autocomplete="off"></label>
+      <label class="g-row"><span>${T('noteL')}</span><input id="shop-note" class="in-r" type="text" maxlength="200" value="${esc(f.note)}" placeholder="${T('shopNotePh')}"></label>
     </div></div>
-    <div class="sect"><p class="sect-h">Màu</p><div class="swatches">${SHOP_COLORS.map((c) => `<button class="swatch ${f.color === c ? 'on' : ''}" style="background:${c}" data-act="shop-color" data-v="${c}" aria-label="Màu ${c}"></button>`).join('')}</div></div>
+    <div class="sect"><p class="sect-h">${T('color')}</p><div class="swatches">${SHOP_COLORS.map((c) => `<button class="swatch ${f.color === c ? 'on' : ''}" style="background:${c}" data-act="shop-color" data-v="${c}" aria-label="${T('colorA', c)}"></button>`).join('')}</div></div>
     <p id="shop-err" class="err" hidden></p>
-    ${f.id && !f.returnForm ? `<div class="group"><button class="g-row center danger" data-act="shop-del">${I.trash}Xoá quán</button></div>` : ''}
-  </div>${sheetFoot('shop-save', 'Lưu quán')}`);
+    ${f.id && !f.returnForm ? `<div class="group"><button class="g-row center danger" data-act="shop-del">${I.trash}${T('delShop')}</button></div>` : ''}
+  </div>${sheetFoot('shop-save', T('saveShop'))}`);
 }
 function saveShop() {
   const f = shopForm;
   const name = f.name.trim();
-  if (!name) return showErr('#shop-err', 'Nhập tên quán.');
+  if (!name) return showErr('#shop-err', T('e_name'));
   const presets = [];
   for (const p of f.presets) {
     const pname = String(p.name || '').trim();
     if (!p.start && !p.end && !pname) continue;
-    if (!isTime(p.start) || !isTime(p.end)) return showErr('#shop-err', `Ca “${pname || 'chưa đặt tên'}” cần đủ giờ vào và giờ ra.`);
-    if (p.start === p.end) return showErr('#shop-err', `Ca “${pname || p.start}” có giờ vào và giờ ra trùng nhau.`);
+    if (!isTime(p.start) || !isTime(p.end)) return showErr('#shop-err', T('e_pTimes', pname || T('unnamed')));
+    if (p.start === p.end) return showErr('#shop-err', T('e_pSame', pname || p.start));
     const breakMin = Math.max(0, Math.round(Number(p.breakMin) || 0));
-    if (shiftMin({ start: p.start, end: p.end, breakMin }) <= 0) return showErr('#shop-err', `Ca “${pname || p.start}” có thời gian nghỉ dài hơn cả ca.`);
+    if (shiftMin({ start: p.start, end: p.end, breakMin }) <= 0) return showErr('#shop-err', T('e_pBrk', pname || p.start));
     presets.push({ id: p.id || newId(), name: pname, start: p.start, end: p.end, breakMin });
   }
   const yenNum = (v) => Math.max(0, Math.round(Number(v) || 0));
@@ -1453,58 +1874,58 @@ function saveShop() {
     if (!form.id) applyShopDefaults();
     openSheet(shiftSheetHTML()); updatePreview();
   } else { closeSheet(); commit(['config']); }
-  toast(`Đã lưu quán${presets.length ? ` với ${presets.length} ca thường làm` : ''}`);
+  toast(T('shopSaved', presets.length));
 }
 function deleteShop() {
   const id = shopForm.id, keys = ['config'];
   ensureConfig().shops = shops().filter((s) => s.id !== id);
   dropShifts((s) => s.shopId === id, keys);
-  closeSheet(); commit(keys); toast('Đã xoá quán');
+  closeSheet(); commit(keys); toast(T('shopDeleted'));
 }
 
 function openVac(id) {
   const ex = id ? settings().vacations.find((v) => v.id === id) : null;
   const t = todayStr();
   vacForm = { id: ex ? ex.id : null };
-  openSheet(sheetHead(ex ? 'Kỳ nghỉ' : 'Kỳ nghỉ mới', '長期休業') + `<div class="sheet-scroll">
+  openSheet(sheetHead(T(ex ? 'vacation' : 'newVac'), LI === 2 ? '' : '長期休業') + `<div class="sheet-scroll">
     <div class="sect"><div class="group">
-      <label class="g-row"><span>Tên</span><input id="vac-name" class="in-r" type="text" maxlength="40" value="${esc(ex ? ex.name : '')}" placeholder="Nghỉ hè"></label>
-      <label class="g-row"><span>Từ ngày</span><input id="vac-start" class="in-pill" type="date" value="${ex ? ex.start : t}"></label>
-      <label class="g-row"><span>Đến ngày</span><input id="vac-end" class="in-pill" type="date" value="${ex ? ex.end : addDays(t, 41)}"></label>
-    </div><p class="sect-f">Theo lịch nghỉ chính thức của trường (夏休み, 冬休み, 春休み). Tuần nằm trọn trong kỳ nghỉ dùng giới hạn ${fmtH(settings().vacWeekLimit * 60)}/tuần.</p></div>
+      <label class="g-row"><span>${T('nameL')}</span><input id="vac-name" class="in-r" type="text" maxlength="40" value="${esc(ex ? ex.name : '')}" placeholder="${T('vacPh')}"></label>
+      <label class="g-row"><span>${T('fromL')}</span><input id="vac-start" class="in-pill" type="date" value="${ex ? ex.start : t}"></label>
+      <label class="g-row"><span>${T('toL')}</span><input id="vac-end" class="in-pill" type="date" value="${ex ? ex.end : addDays(t, 41)}"></label>
+    </div><p class="sect-f">${T('vacHelp', fmtH(settings().vacWeekLimit * 60))}</p></div>
     <p id="vac-err" class="err" hidden></p>
-    ${ex ? `<div class="group"><button class="g-row center danger" data-act="vac-del">${I.trash}Xoá kỳ nghỉ</button></div>` : ''}
-  </div>${sheetFoot('vac-save', 'Lưu kỳ nghỉ')}`);
+    ${ex ? `<div class="group"><button class="g-row center danger" data-act="vac-del">${I.trash}${T('delVac')}</button></div>` : ''}
+  </div>${sheetFoot('vac-save', T('saveVac'))}`);
 }
 function saveVac() {
   const name = $('#vac-name').value.trim(), start = $('#vac-start').value, end = $('#vac-end').value;
-  if (!isDate(start) || !isDate(end) || start > end) return showErr('#vac-err', 'Ngày bắt đầu phải trước ngày kết thúc.');
+  if (!isDate(start) || !isDate(end) || start > end) return showErr('#vac-err', T('e_vac'));
   const list = settings().vacations.filter((v) => v.id !== vacForm.id);
-  list.push({ id: vacForm.id || newId(), name: name || 'Kỳ nghỉ', start, end });
+  list.push({ id: vacForm.id || newId(), name: name || T('vacation'), start, end });
   list.sort((a, b) => a.start.localeCompare(b.start));
-  closeSheet(); setSetting({ vacations: list }); toast('Đã lưu kỳ nghỉ');
+  closeSheet(); setSetting({ vacations: list }); toast(T('vacSaved'));
 }
 
 function openDay(d) {
-  const list = idx.byDate[d] || [], tot = idx.day[d] || 0, ws = weekStartOf(d), left = availableOn(d), os = overIds(ws), hol = holidayName(d), t = todayStr();
+  const list = idx.byDate[d] || [], tot = idx.day[d] || 0, ws = weekStartOf(d), left = availableOn(d), os = overIds(ws), hol = holidayName(d), td = todayStr();
   const groups = list.map((s) => {
-    const shop = shopById(s.shopId), tag = os.has(s.id) ? '<span class="tag red">Vượt giới hạn</span>' : s.date > t ? '<span class="tag">Dự kiến</span>' : '';
+    const shop = shopById(s.shopId), tag = os.has(s.id) ? `<span class="tag red">${T('st_over')}</span>` : s.date > td ? `<span class="tag">${T('s_planned')}</span>` : '';
     return `<div class="group">
       <button class="g-row" data-act="edit" data-id="${esc(s.id)}"><span class="shift-shop"><i class="dot" style="background:${(shop && shop.color) || '#8E8E93'}"></i><span>${esc(shopName(s.shopId))}</span></span>${tag}<span class="li-end">${I.chev}</span></button>
-      <div class="g-row"><span>Giờ làm</span><b class="t" style="font-weight:600">${esc(s.start)} – ${esc(s.end)}${isOvernight(s) ? ' (+1)' : ''}</b></div>
-      <div class="g-row"><span>Nghỉ giải lao <span class="ja">休憩</span></span><b class="t" style="font-weight:600">${Number(s.breakMin) || 0} phút</b></div>
-      ${hasActual(s) ? `<div class="g-row"><span>Giờ thực làm <span class="ja">実績</span></span><b class="t" style="font-weight:600;color:var(--green-ink)">${esc(s.actual.start)} – ${esc(s.actual.end)}${Number(s.actual.breakMin) ? ` · nghỉ ${Number(s.actual.breakMin)}′` : ''}</b></div>`
-        : punchState(s) ? `<div class="g-row"><span>Giờ thực làm <span class="ja">実績</span></span><b class="t" style="font-weight:600;color:var(--amber-ink)">vào ${hmOf(s.punch.in)} · đang làm</b></div>` : ''}
-      ${list.length > 1 ? `<div class="g-row"><span>Số giờ của ca</span><b class="t" style="font-weight:600">${fmtH(shiftMin(s))}</b></div>` : ''}
+      <div class="g-row"><span>${T('hoursL')}</span><b class="t" style="font-weight:600">${esc(s.start)} – ${esc(s.end)}${isOvernight(s) ? ' (+1)' : ''}</b></div>
+      <div class="g-row"><span>${T('breakL')} <span class="ja">休憩</span></span><b class="t" style="font-weight:600">${T('mins', Number(s.breakMin) || 0)}</b></div>
+      ${hasActual(s) ? `<div class="g-row"><span>${T('actualH')} <span class="ja">実績</span></span><b class="t" style="font-weight:600;color:var(--green-ink)">${esc(s.actual.start)} – ${esc(s.actual.end)}${Number(s.actual.breakMin) ? T('brkX', Number(s.actual.breakMin)) : ''}</b></div>`
+        : punchState(s) ? `<div class="g-row"><span>${T('actualH')} <span class="ja">実績</span></span><b class="t" style="font-weight:600;color:var(--amber-ink)">${T('inWorking', hmOf(s.punch.in))}</b></div>` : ''}
+      ${list.length > 1 ? `<div class="g-row"><span>${T('shiftHours')}</span><b class="t" style="font-weight:600">${fmtH(shiftMin(s))}</b></div>` : ''}
     </div>`;
   }).join('');
-  openSheet(sheetHead(`${DOW_LONG[dowOf(d)]}, ${fmtDM(d)}`, hol ? `${esc(hol)} · ngày lễ` : list.length ? `${list.length} ca trong ngày` : 'Chưa có ca') + `<div class="sheet-scroll">
-    ${list.length ? `<div class="stack-s">${groups}</div>` : '<p class="sect-f">Chưa có ca nào trong ngày này.</p>'}
+  openSheet(sheetHead(longDay(d), hol ? T('dayHolSub', esc(hol)) : list.length ? T('nShiftsDay', list.length) : T('noShiftSub')) + `<div class="sheet-scroll">
+    ${list.length ? `<div class="stack-s">${groups}</div>` : `<p class="sect-f">${T('noShiftsDay')}</p>`}
     <div class="group">
-      <div class="g-row"><span>Tổng giờ trong ngày</span><b class="t" style="font-size:22px;font-weight:600;letter-spacing:-.02em">${fmtH(tot)}</b></div>
-      <div class="g-row"><span>Còn lại trong tuần<br><small class="muted t">${fmtDM(ws)} – ${fmtDM(addDays(ws, 6))}</small></span><b class="t" style="font-size:22px;font-weight:600;letter-spacing:-.02em;color:var(${left ? '--green-ink' : '--red-ink'})">${fmtH(left)}</b></div>
+      <div class="g-row"><span>${T('dayTotal')}</span><b class="t" style="font-size:22px;font-weight:600;letter-spacing:-.02em">${fmtH(tot)}</b></div>
+      <div class="g-row"><span>${T('tLeftWeek')}<br><small class="muted t">${fmtDM(ws)} – ${fmtDM(addDays(ws, 6))}</small></span><b class="t" style="font-size:22px;font-weight:600;letter-spacing:-.02em;color:var(${left ? '--green-ink' : '--red-ink'})">${fmtH(left)}</b></div>
     </div>
-    </div>${sheetFoot('add', 'Thêm ca ngày này', `data-date="${d}"`)}`);
+    </div>${sheetFoot('add', T('addShiftDay'), `data-date="${d}"`)}`);
 }
 
 /* ---------- action sheet (destructive confirmations) ---------- */
@@ -1515,7 +1936,7 @@ function actionSheet({ title = '', message = '', actions = [] }) {
   el.innerHTML = `<div class="as-bg" data-act="as-cancel"></div><div class="as-panel" role="dialog" aria-modal="true">
     <div class="as-group">${title || message ? `<div class="as-head">${title ? `<b>${esc(title)}</b>` : ''}${esc(message)}</div>` : ''}
       ${actions.map((a, i) => `<button class="as-btn ${a.danger ? 'danger' : ''}" data-act="as-do" data-i="${i}">${esc(a.label)}</button>`).join('')}</div>
-    <button class="as-btn cancel" data-act="as-cancel">Huỷ</button></div>`;
+    <button class="as-btn cancel" data-act="as-cancel">${T('cancel')}</button></div>`;
   el.hidden = false;
 }
 function closeAS() { $('#as').hidden = true; asActions = []; }
@@ -1524,10 +1945,10 @@ const askConfirm = ({ title, text, ok, onOk }) => actionSheet({ title, message: 
 /* ---------- data tools ---------- */
 function loadSample() {
   const t = todayStr(), ws = weekStartOf(t), prev = addDays(ws, -7), next = addDays(ws, 7);
-  const A = { id: 'sample-konbini', name: 'Konbini Ōkubo', wage: 1200, wageWeekend: 1250, wageHoliday: 1300, nightPct: 25, transport: 340, closeDay: 0, payDay: 25, payMonth: 1, color: SHOP_COLORS[0], sample: true, address: 'Ōkubo, Shinjuku', phone: '', note: 'Nộp シフト trước thứ Sáu',
-    presets: [{ id: 'sp-a1', name: 'Ca sáng', start: '09:00', end: '13:00', breakMin: 0 }, { id: 'sp-a2', name: 'Ca dài', start: '09:00', end: '14:00', breakMin: 0 }] };
+  const A = { id: 'sample-konbini', name: 'Konbini Ōkubo', wage: 1200, wageWeekend: 1250, wageHoliday: 1300, nightPct: 25, transport: 340, closeDay: 0, payDay: 25, payMonth: 1, color: SHOP_COLORS[0], sample: true, address: 'Ōkubo, Shinjuku', phone: '', note: T('smNote'),
+    presets: [{ id: 'sp-a1', name: T('smMorning'), start: '09:00', end: '13:00', breakMin: 0 }, { id: 'sp-a2', name: T('smLong'), start: '09:00', end: '14:00', breakMin: 0 }] };
   const B = { id: 'sample-izakaya', name: 'Izakaya Hana', wage: 1300, wageWeekend: 1400, nightPct: 25, transport: 0, closeDay: 15, payDay: 25, payMonth: 0, color: SHOP_COLORS[1], sample: true, address: 'Takadanobaba', phone: '', note: '',
-    presets: [{ id: 'sp-b1', name: 'Ca tối', start: '18:00', end: '22:00', breakMin: 0 }, { id: 'sp-b2', name: 'Ca tối dài', start: '17:00', end: '23:00', breakMin: 30 }] };
+    presets: [{ id: 'sp-b1', name: T('smEvening'), start: '18:00', end: '22:00', breakMin: 0 }, { id: 'sp-b2', name: T('smEveLong'), start: '17:00', end: '23:00', breakMin: 30 }] };
   const plan = [
     [prev, 0, A, '09:00', '14:00', 0], [prev, 1, B, '17:00', '23:00', 30], [prev, 2, A, '09:00', '13:00', 0], [prev, 3, B, '17:00', '23:00', 30], [prev, 4, A, '09:00', '14:00', 0], [prev, 5, B, '16:00', '22:30', 30],
     [ws, 0, A, '09:00', '13:00', 0], [ws, 1, B, '18:00', '22:00', 0], [ws, 3, A, '09:00', '13:30', 0], [ws, 4, B, '17:00', '22:00', 0], [ws, 5, B, '16:00', '21:00', 0], [ws, 6, A, '10:00', '12:00', 0],
@@ -1537,15 +1958,15 @@ function loadSample() {
   for (const s of [A, B]) if (!cfg.shops.some((x) => x.id === s.id)) cfg.shops.push(s);
   plan.forEach(([w, i, shop, start, end, br], n) => putShift({ id: `sample-${n}`, shopId: shop.id, date: addDays(w, i), start, end, breakMin: br, note: '', sample: true }, keys));
   ui.ws = ws; ui.tab = 'week';
-  commit(keys); toast('Đã nạp dữ liệu mẫu');
+  commit(keys); toast(T('sampleLoaded'));
 }
 function clearSample() {
   const keys = ['config'];
   ensureConfig().shops = shops().filter((s) => !s.sample);
   dropShifts((s) => s.sample, keys);
-  commit(keys); toast('Đã xoá dữ liệu mẫu');
+  commit(keys); toast(T('sampleCleared'));
 }
-function clearAll() { const keys = Object.keys(docs); docs = {}; commit(keys); toast('Đã xoá toàn bộ dữ liệu'); }
+function clearAll() { const keys = Object.keys(docs); docs = {}; commit(keys); toast(T('allCleared')); }
 
 async function exportData() {
   const payload = { app: 'arubaito', version: 1, exportedAt: new Date().toISOString(), config: docs.config || { shops: [], settings: {} }, shifts: allShifts() };
@@ -1554,8 +1975,8 @@ async function exportData() {
   if (c && typeof c.use === 'function') {
     let dl = null; try { dl = await c.use('downloads'); } catch (e) {}
     if (dl) {
-      try { await dl.save({ filename: name, data: text }); toast('Đã xuất bản sao lưu'); }
-      catch (e) { if (!e || e.code !== 'declined') toast('Không xuất được tệp ở chế độ xem này.', 'bad'); }
+      try { await dl.save({ filename: name, data: text }); toast(T('exported')); }
+      catch (e) { if (!e || e.code !== 'declined') toast(T('exportFail'), 'bad'); }
       return;
     }
   }
@@ -1570,11 +1991,11 @@ async function exportData() {
 }
 function importData(text) {
   let o;
-  try { o = JSON.parse(text); } catch (e) { toast('Tệp không đúng định dạng JSON.', 'bad'); return; }
+  try { o = JSON.parse(text); } catch (e) { toast(T('badJson'), 'bad'); return; }
   const okShift = (s) => s && typeof s.id === 'string' && isDate(s.date) && isTime(s.start) && isTime(s.end) && typeof s.shopId === 'string';
-  if (!o || o.app !== 'arubaito' || !o.config || !Array.isArray(o.shifts)) { toast('Đây không phải tệp sao lưu của Sổ giờ Arubaito.', 'bad'); return; }
+  if (!o || o.app !== 'arubaito' || !o.config || !Array.isArray(o.shifts)) { toast(T('notBackup'), 'bad'); return; }
   const shifts = o.shifts.filter(okShift);
-  askConfirm({ title: 'Nhập bản sao lưu?', text: `Tệp có ${shifts.length} ca và ${(o.config.shops || []).length} quán. Toàn bộ dữ liệu hiện tại sẽ được thay thế.`, ok: 'Thay thế', onOk: () => {
+  askConfirm({ title: T('importQ'), text: T('importText', shifts.length, (o.config.shops || []).length), ok: T('replace'), onOk: () => {
     const keys = Object.keys(docs);
     docs = { config: { shops: Array.isArray(o.config.shops) ? o.config.shops : [], settings: o.config.settings || {} } };
     for (const s of shifts) {
@@ -1586,7 +2007,7 @@ function importData(text) {
       (docs[k] || (docs[k] = { shifts: [] })).shifts.push({ id: s.id, shopId: s.shopId, date: s.date, start: s.start, end: s.end, breakMin: Number(s.breakMin) || 0, note: String(s.note || '').slice(0, 200), ...extra });
     }
     _st = null; ui.ws = weekStartOf(todayStr());
-    commit([...keys, ...Object.keys(docs)]); toast(`Đã nhập ${shifts.length} ca`);
+    commit([...keys, ...Object.keys(docs)]); toast(T('imported', shifts.length));
   } });
 }
 
@@ -1623,7 +2044,7 @@ const ACT = {
   'swipe-del': (el) => deleteShift(el.dataset.id),
   punch: (el) => {
     const id = el.dataset.id, k = el.dataset.k;
-    if (k === 'cancel') return actionSheet({ title: 'Huỷ chấm công?', message: 'Giờ vào ca vừa bấm sẽ bị bỏ, ca trở về giờ đã xếp.', actions: [{ label: 'Huỷ chấm công', danger: true, fn: () => punchShift(id, 'cancel') }] });
+    if (k === 'cancel') return actionSheet({ title: T('cancelPunchQ'), message: T('cancelPunchMsg'), actions: [{ label: T('cancelPunch'), danger: true, fn: () => punchShift(id, 'cancel') }] });
     punchShift(id, k);
   },
   'sh-actual-add': () => {
@@ -1642,13 +2063,13 @@ const ACT = {
   'sh-break': (el) => { form.breakMin = Number(el.dataset.v); $('#sh-break').innerHTML = breakSeg(); $('#sh-presets').innerHTML = presetChips(); updatePreview(); },
   'sh-quick': (el) => { form.date = el.dataset.v === '+7' ? addDays(isDate(form.date) ? form.date : todayStr(), 7) : el.dataset.v; $('#sh-date').value = form.date; updatePreview(); },
   'sh-save': () => saveShift(),
-  'sh-del': () => { const id = form.id; actionSheet({ title: 'Xoá ca này?', message: 'Bạn có thể hoàn tác ngay sau khi xoá.', actions: [{ label: 'Xoá ca', danger: true, fn: () => deleteShift(id) }] }); },
+  'sh-del': () => { const id = form.id; actionSheet({ title: T('delShiftQ'), message: T('delShiftMsg'), actions: [{ label: T('delShift'), danger: true, fn: () => deleteShift(id) }] }); },
   'sh-dup': () => {
     const src = allShifts().find((s) => s.id === form.id); if (!src) return;
     const copy = { ...src, id: newId(), date: addDays(src.date, 7) }; delete copy.sample; delete copy.actual; delete copy.punch;
     const keys = []; putShift(copy, keys); closeSheet();
     if (ui.tab === 'week') ui.ws = weekStartOf(copy.date);
-    commit(keys); toast(`Đã chép sang ${DOW[dowOf(copy.date)]} ${fmtDM(copy.date)}`);
+    commit(keys); toast(T('copied', longDay(copy.date)));
   },
 
   'shop-new': () => openShop(null),
@@ -1661,7 +2082,7 @@ const ACT = {
   'shop-save': () => saveShop(),
   'shop-del': () => {
     const n = allShifts().filter((s) => s.shopId === shopForm.id).length;
-    actionSheet({ title: `Xoá quán “${shopForm.name}”?`, message: n ? `${n} ca làm ở quán này cũng sẽ bị xoá.` : 'Quán chưa có ca nào.', actions: [{ label: 'Xoá quán', danger: true, fn: deleteShop }] });
+    actionSheet({ title: T('delShopQ', shopForm.name), message: n ? T('delShopN', n) : T('delShop0'), actions: [{ label: T('delShop'), danger: true, fn: deleteShop }] });
   },
   'shop-back': () => { const ret = shopForm.returnForm; shopForm = null; form = ret; openSheet(shiftSheetHTML()); updatePreview(); },
   'pr-add': () => { shopForm.presets.push(blankPreset()); $('#shop-presets').innerHTML = presetEditors(); const ins = document.querySelectorAll('#shop-presets .in-l'); ins[ins.length - 1].focus(); },
@@ -1670,14 +2091,14 @@ const ACT = {
   'vac-new': () => openVac(null),
   'vac-edit': (el) => openVac(el.dataset.id),
   'vac-save': () => saveVac(),
-  'vac-del': () => { const id = vacForm.id; closeSheet(); setSetting({ vacations: settings().vacations.filter((v) => v.id !== id) }); toast('Đã xoá kỳ nghỉ'); },
+  'vac-del': () => { const id = vacForm.id; closeSheet(); setSetting({ vacations: settings().vacations.filter((v) => v.id !== id) }); toast(T('vacDeleted')); },
 
   'set-ws': (el) => { setSetting({ weekStart: Number(el.dataset.v) }); ui.ws = weekStartOf(ui.ws); render(); },
   export: () => exportData(),
   import: () => { const f = $('#import-file'); f.value = ''; f.click(); },
   'sample-load': () => loadSample(),
   'sample-clear': () => clearSample(),
-  'clear-all': () => askConfirm({ title: 'Xoá toàn bộ dữ liệu?', text: `Tất cả ${allShifts().length} ca, ${shops().length} quán và cài đặt sẽ bị xoá vĩnh viễn. Nên xuất sao lưu trước.`, ok: 'Xoá hết', onOk: clearAll }),
+  'clear-all': () => askConfirm({ title: T('clearAllQ'), text: T('clearAllText', allShifts().length, shops().length), ok: T('deleteAll'), onOk: clearAll }),
 };
 document.addEventListener('click', (e) => {
   const tab = e.target.closest('[data-tab]');
@@ -1769,6 +2190,7 @@ document.addEventListener('change', (e) => {
   const num = (lo, hi) => { const v = Number(el.value); return Number.isFinite(v) && v > 0 ? clamp(Math.round(v * 2) / 2, lo, hi) : null; };
   if (id === 'set-week') { const v = num(1, 80); if (v) setSetting({ weekLimit: v }); else render(); }
   else if (id === 'set-vweek') { const v = num(1, 80); if (v) setSetting({ vacWeekLimit: v }); else render(); }
+  else if (id === 'set-lang') { ui.lang = el.value; setLang(ui.lang); saveUI(); render(); }
   else if (id === 'import-file' && el.files && el.files[0]) { const r = new FileReader(); r.onload = () => importData(String(r.result || '')); r.readAsText(el.files[0]); }
 });
 document.addEventListener('keydown', (e) => {

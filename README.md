@@ -12,6 +12,7 @@
 - Giờ còn lại tính trong từng tuần, bắt đầu từ ngày đầu tuần chọn trong Cài đặt (Thứ Hai hoặc Chủ nhật); lịch tuần và lịch tháng cũng bắt đầu từ ngày đó.
 - **Kỳ nghỉ dài** (長期休業): khai báo khoảng ngày, tuần nằm trọn trong kỳ nghỉ dùng giới hạn 40h/tuần.
 - Xuất và nhập bản sao lưu `.json`.
+- **5 ngôn ngữ**: Tiếng Việt, English, 日本語, 简体中文, 한국어 (đổi ở Cài đặt → Ngôn ngữ). Lần đầu mở app tự theo ngôn ngữ của máy; ai đã có dữ liệu từ trước vẫn giữ tiếng Việt. Ngày hiển thị dd/mm với tiếng Việt, m/d với các ngôn ngữ khác.
 - Giao diện hiện đại: nền xám nhạt, thẻ trắng bo tròn lớn, nút viên thuốc màu than, thẻ minh hoạ núi Phú Sĩ đổi màu trời theo số giờ trong tuần (xanh → vàng → đỏ), thanh tab nổi, vuốt trái để xoá ca (có hoàn tác), hỗ trợ chế độ tối.
 
 ## Cách 1: Dùng qua link Claude
